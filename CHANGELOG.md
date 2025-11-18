@@ -1,3 +1,61 @@
+## [0.2178.5](https://github.com/lightdash/lightdash/compare/0.2178.4...0.2178.5) (2025-11-18)
+
+
+### Bug Fixes
+
+* include first value of the custom range for x axis ([#18172](https://github.com/lightdash/lightdash/issues/18172)) ([fead3c6](https://github.com/lightdash/lightdash/commit/fead3c677511f5e5f32751bf4bd83e475b321b8a))
+
+## [0.2178.4](https://github.com/lightdash/lightdash/compare/0.2178.3...0.2178.4) (2025-11-17)
+
+
+### Bug Fixes
+
+* add userId to artifact verification and similarity analytics ([#18171](https://github.com/lightdash/lightdash/issues/18171)) ([14c5361](https://github.com/lightdash/lightdash/commit/14c536119230a6cccf76ceda4eb53229f00d5d7e))
+
+## [0.2178.3](https://github.com/lightdash/lightdash/compare/0.2178.2...0.2178.3) (2025-11-17)
+
+
+### Bug Fixes
+
+* paramName in getSchedulerLink ([#18162](https://github.com/lightdash/lightdash/issues/18162)) ([6dc4d2b](https://github.com/lightdash/lightdash/commit/6dc4d2b939dacff263cd27d6f974eb5cd777e17f))
+
+## [0.2178.2](https://github.com/lightdash/lightdash/compare/0.2178.1...0.2178.2) (2025-11-17)
+
+
+### Bug Fixes
+
+* y-axis label overlaps with tick labels in pivoted charts ([#18168](https://github.com/lightdash/lightdash/issues/18168)) ([1e7f064](https://github.com/lightdash/lightdash/commit/1e7f064b4a0a3f552bd5fdd00ee21055de17d39f)), closes [#8811](https://github.com/lightdash/lightdash/issues/8811)
+
+## [0.2178.1](https://github.com/lightdash/lightdash/compare/0.2178.0...0.2178.1) (2025-11-17)
+
+
+### Bug Fixes
+
+* **frontend:** remove verified answers feature flag ([#18170](https://github.com/lightdash/lightdash/issues/18170)) ([79a58ca](https://github.com/lightdash/lightdash/commit/79a58cabbc90677a7635403196c03ddb780ff01f))
+
+# [0.2178.0](https://github.com/lightdash/lightdash/compare/0.2177.1...0.2178.0) (2025-11-17)
+
+
+### Features
+
+* add analytics tracking for Verified Answers and enable ([#18157](https://github.com/lightdash/lightdash/issues/18157)) ([cdc8de1](https://github.com/lightdash/lightdash/commit/cdc8de163e70d5d728ef9153c0dfd9d860d954b2))
+* configurable embedding models ([#18001](https://github.com/lightdash/lightdash/issues/18001)) ([dae423a](https://github.com/lightdash/lightdash/commit/dae423a9e30ef21d7ad490e3d2265d23a34fde14))
+
+## [0.2177.1](https://github.com/lightdash/lightdash/compare/0.2177.0...0.2177.1) (2025-11-17)
+
+
+### Bug Fixes
+
+* custom metric sql templates and filters not updated on rename ([#18146](https://github.com/lightdash/lightdash/issues/18146)) ([0d5c02f](https://github.com/lightdash/lightdash/commit/0d5c02f87a919b642761c62ad11f329444b2aa74))
+* resize iamge on table column width ([#18129](https://github.com/lightdash/lightdash/issues/18129)) ([3236f44](https://github.com/lightdash/lightdash/commit/3236f44623e379437b7c688b34b42f487541b40a))
+
+# [0.2177.0](https://github.com/lightdash/lightdash/compare/0.2176.3...0.2177.0) (2025-11-17)
+
+
+### Features
+
+* support width height and fit on image cell ([#18125](https://github.com/lightdash/lightdash/issues/18125)) ([2411830](https://github.com/lightdash/lightdash/commit/2411830d8f9ffb599cd2c68f3558038676ab7ff5))
+
 ## [0.2176.3](https://github.com/lightdash/lightdash/compare/0.2176.2...0.2176.3) (2025-11-14)
 
 
