@@ -9,6 +9,8 @@ import { UserModel } from '../../models/UserModel';
 import { ProjectModel } from '../../models/ProjectModel';
 import { FileParserService } from './FileParserService';
 import { AdhocTableExploreService } from './AdhocTableExploreService';
+import { AdhocTableCatalogService } from './AdhocTableCatalogService';
+import { AdhocTablePermissionService } from './AdhocTablePermissionService';
 import { NotFoundError, ForbiddenError } from '@lightdash/common';
 import { warehouseClientFromCredentials } from '@lightdash/warehouses';
 import {
@@ -28,6 +30,12 @@ export class AdhocTableService {
 
         @Inject('lightdashConfig')
         private lightdashConfig: LightdashConfig,
+
+        @Inject()
+        private catalogService: AdhocTableCatalogService,
+
+        @Inject()
+        private permissionService: AdhocTablePermissionService,
 
         @Inject()
         private userModel: UserModel,
@@ -110,13 +118,38 @@ export class AdhocTableService {
 
         // Register explore for the uploaded table
         try {
-            await this.registerExplore(
+            const exploreUuid = await this.registerExplore(
                 projectUuid,
                 record.uuid,
                 warehouseTableName,
                 parseResult.columns,
                 credentials.type,
             );
+
+            // Register table in catalog search for discovery
+            try {
+                // Get the explore object to register in catalog
+                const explore = await this.database('cached_explore')
+                    .select('explore')
+                    .where('cached_explore_uuid', exploreUuid)
+                    .first();
+
+                if (explore) {
+                    await this.catalogService.registerInCatalog(
+                        projectUuid,
+                        record.uuid,
+                        request.tableName,
+                        JSON.parse(JSON.stringify(explore.explore)),
+                        warehouseTableName,
+                    );
+                }
+            } catch (catalogError) {
+                // Log but don't fail - catalog registration is non-critical
+                console.error(
+                    'Failed to register adhoc table in catalog:',
+                    catalogError,
+                );
+            }
         } catch (error) {
             // Log error but don't fail - table is created, just explore registration failed
             // TODO: Add proper logging
@@ -134,6 +167,17 @@ export class AdhocTableService {
         userUuid: string,
         options?: { scope?: AdhocTableScope; includeDeleted?: boolean },
     ): Promise<AdhocTableListResponse[]> {
+        // Verify user is project member
+        const canAccess = await this.permissionService.userCanAccessProject(
+            projectUuid,
+            userUuid,
+        );
+        if (!canAccess) {
+            throw new ForbiddenError(
+                'You do not have access to this project',
+            );
+        }
+
         let query = this.database('adhoc_tables')
             .where('project_uuid', projectUuid)
             .whereNull('deleted_at');
@@ -147,6 +191,14 @@ export class AdhocTableService {
             query = query.where('created_by', userUuid);
         } else if (options?.scope === AdhocTableScope.SHARED) {
             query = query.where('scope', AdhocTableScope.SHARED);
+        } else {
+            // Default: show personal and shared tables
+            query = query.where((q: any) => {
+                q.where('created_by', userUuid).orWhere(
+                    'scope',
+                    AdhocTableScope.SHARED,
+                );
+            });
         }
 
         const records = await query.orderBy('created_at', 'desc');
@@ -184,8 +236,12 @@ export class AdhocTableService {
             throw new NotFoundError(`Table ${tableUuid} not found`);
         }
 
-        // Only owner or admin can delete
-        if (table.createdBy !== userUuid) {
+        // Verify permission to delete
+        const canDelete = await this.permissionService.userCanDeleteTable(
+            tableUuid,
+            userUuid,
+        );
+        if (!canDelete) {
             throw new ForbiddenError(
                 'Only table owner can delete this table',
             );
@@ -198,6 +254,17 @@ export class AdhocTableService {
                 deleted_at: this.database.raw('now()'),
                 updated_at: this.database.raw('now()'),
             });
+
+        // Remove from catalog
+        try {
+            await this.catalogService.removeFromCatalog(
+                table.projectUuid,
+                tableUuid,
+            );
+        } catch (error) {
+            // Log but don't fail - deletion succeeded
+            console.error('Failed to remove adhoc table from catalog:', error);
+        }
 
         // TODO: Add job to actually drop warehouse table after retention period
     }
