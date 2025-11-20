@@ -14,6 +14,13 @@ export enum AdhocTableRetention {
 
 export type AdhocTableType = 'csv' | 'xlsx';
 
+export interface ColumnDefinition {
+    name: string;
+    type: string; // STRING, NUMERIC, TIMESTAMP, BOOLEAN
+    displayType: string;
+    nullable?: boolean;
+}
+
 export interface AdhocTableListItem {
     uuid: string;
     name: string;

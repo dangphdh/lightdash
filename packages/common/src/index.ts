@@ -72,6 +72,7 @@ export { default as lightdashDbtYamlSchema } from './schemas/json/lightdash-dbt-
 export { default as lightdashProjectConfigSchema } from './schemas/json/lightdash-project-config-1.0.json';
 export * from './templating/template';
 export * from './types/account';
+export * from './types/adhocTable';
 export * from './types/analytics';
 export * from './types/any';
 export * from './types/api';
