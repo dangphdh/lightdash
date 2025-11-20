@@ -1,3 +1,150 @@
+# [0.2189.0](https://github.com/lightdash/lightdash/compare/0.2188.1...0.2189.0) (2025-11-19)
+
+
+### Features
+
+* show latest SD run status ([#18139](https://github.com/lightdash/lightdash/issues/18139)) ([3d7fea4](https://github.com/lightdash/lightdash/commit/3d7fea43358d82e478973347f95296c71eb5b54d))
+
+## [0.2188.1](https://github.com/lightdash/lightdash/compare/0.2188.0...0.2188.1) (2025-11-19)
+
+
+### Bug Fixes
+
+* look for exact table names in sql runner ([#18224](https://github.com/lightdash/lightdash/issues/18224)) ([73379ae](https://github.com/lightdash/lightdash/commit/73379ae9f2f20070da6afed784b245541d0e277e))
+
+# [0.2188.0](https://github.com/lightdash/lightdash/compare/0.2187.0...0.2188.0) (2025-11-19)
+
+
+### Bug Fixes
+
+* reset create-query cache to sync with redux state reset ([#18221](https://github.com/lightdash/lightdash/issues/18221)) ([b0447bf](https://github.com/lightdash/lightdash/commit/b0447bf0d27de9b8547f9e69cc013db5d7856943))
+
+
+### Features
+
+* run findExplores with ambiguity check ([#18180](https://github.com/lightdash/lightdash/issues/18180)) ([6e77fde](https://github.com/lightdash/lightdash/commit/6e77fde9cbf323e4ee18879f8288958befae1198))
+
+# [0.2187.0](https://github.com/lightdash/lightdash/compare/0.2186.1...0.2187.0) (2025-11-19)
+
+
+### Features
+
+* add Amazon Bedrock AI provider support ([#18208](https://github.com/lightdash/lightdash/issues/18208)) ([440409f](https://github.com/lightdash/lightdash/commit/440409f499782a7ba95874c74ab9aa87c3fb9364))
+
+## [0.2186.1](https://github.com/lightdash/lightdash/compare/0.2186.0...0.2186.1) (2025-11-19)
+
+
+### Bug Fixes
+
+* checking for data presence vs. nextPage.isFetching ([#18218](https://github.com/lightdash/lightdash/issues/18218)) ([dcc1c61](https://github.com/lightdash/lightdash/commit/dcc1c61879bd4d02ae150f9b8234b4a9d9a7fd0f))
+
+# [0.2186.0](https://github.com/lightdash/lightdash/compare/0.2185.0...0.2186.0) (2025-11-19)
+
+
+### Features
+
+* create agent readiness controller and service ([#18203](https://github.com/lightdash/lightdash/issues/18203)) ([e434caf](https://github.com/lightdash/lightdash/commit/e434caf15a009aacad425d499894361864b8de79))
+
+# [0.2185.0](https://github.com/lightdash/lightdash/compare/0.2184.1...0.2185.0) (2025-11-19)
+
+
+### Features
+
+* implement scorer functionality for AI Agent readiness evaluation ([#18196](https://github.com/lightdash/lightdash/issues/18196)) ([a438481](https://github.com/lightdash/lightdash/commit/a438481372e70769c07a3c526a459e7d624fb80e))
+
+## [0.2184.1](https://github.com/lightdash/lightdash/compare/0.2184.0...0.2184.1) (2025-11-19)
+
+
+### Bug Fixes
+
+* create share urls per ai artifact slack url ([#18216](https://github.com/lightdash/lightdash/issues/18216)) ([f7e09f8](https://github.com/lightdash/lightdash/commit/f7e09f8ff04127eb7f8b1a5a6a9741221867fd15)), closes [#18214](https://github.com/lightdash/lightdash/issues/18214)
+
+# [0.2184.0](https://github.com/lightdash/lightdash/compare/0.2183.1...0.2184.0) (2025-11-19)
+
+
+### Features
+
+* add dbt-fusion version detection and support ([#18088](https://github.com/lightdash/lightdash/issues/18088)) ([ed4a334](https://github.com/lightdash/lightdash/commit/ed4a3340bd95190f24d07cfd99b356cdc37ed928))
+
+## [0.2183.1](https://github.com/lightdash/lightdash/compare/0.2183.0...0.2183.1) (2025-11-19)
+
+
+### Bug Fixes
+
+* remove unused join meta fields ([#18107](https://github.com/lightdash/lightdash/issues/18107)) ([696e43e](https://github.com/lightdash/lightdash/commit/696e43e4c98ba35090d2c8fbca7fee3d3eb4f429))
+
+# [0.2183.0](https://github.com/lightdash/lightdash/compare/0.2182.2...0.2183.0) (2025-11-19)
+
+
+### Features
+
+* scrollable chart ([#18164](https://github.com/lightdash/lightdash/issues/18164)) ([b0fdff3](https://github.com/lightdash/lightdash/commit/b0fdff333fc6fdf7dacf65211a3c6380f503f949))
+
+## [0.2182.2](https://github.com/lightdash/lightdash/compare/0.2182.1...0.2182.2) (2025-11-19)
+
+
+### Bug Fixes
+
+* improve model rename handling for fields from non-base tables ([#18190](https://github.com/lightdash/lightdash/issues/18190)) ([b4eedd5](https://github.com/lightdash/lightdash/commit/b4eedd53fb0de43e406bf031a1d5ab1b7494e885)), closes [#18189](https://github.com/lightdash/lightdash/issues/18189)
+
+## [0.2182.1](https://github.com/lightdash/lightdash/compare/0.2182.0...0.2182.1) (2025-11-18)
+
+
+### Bug Fixes
+
+* unpivoted query being used to determine query state when not enabled ([#18145](https://github.com/lightdash/lightdash/issues/18145)) ([007ee92](https://github.com/lightdash/lightdash/commit/007ee92db24c6650de91aa18fca176a32f5e6bf5))
+
+# [0.2182.0](https://github.com/lightdash/lightdash/compare/0.2181.0...0.2182.0) (2025-11-18)
+
+
+### Bug Fixes
+
+* refresh token for databrics U2M ([#18102](https://github.com/lightdash/lightdash/issues/18102)) ([a0a6d95](https://github.com/lightdash/lightdash/commit/a0a6d953b36b4c02ee3767d1c5862486b9280609))
+
+
+### Features
+
+* default oauth for cli login ([#18191](https://github.com/lightdash/lightdash/issues/18191)) ([187d8dd](https://github.com/lightdash/lightdash/commit/187d8dda0d1b3cc116c5d2a480422e6f92cae8a3))
+* easier login options for the CLI ([#18192](https://github.com/lightdash/lightdash/issues/18192)) ([b12d48f](https://github.com/lightdash/lightdash/commit/b12d48f433bea14383a08c46346530b36337f13b))
+* key results cache on userUuid when using warehouse credentials ([#18194](https://github.com/lightdash/lightdash/issues/18194)) ([823c210](https://github.com/lightdash/lightdash/commit/823c210e10ccfe7b7c1034bac5c6e7bfa555a6bc))
+
+# [0.2181.0](https://github.com/lightdash/lightdash/compare/0.2180.0...0.2181.0) (2025-11-18)
+
+
+### Features
+
+* add gauge chart visualization type ([#18150](https://github.com/lightdash/lightdash/issues/18150)) ([9b7b5f6](https://github.com/lightdash/lightdash/commit/9b7b5f6734bd06e25e14486caf12830d8de6b738))
+* remove dbt cloud project feature flag ([#18188](https://github.com/lightdash/lightdash/issues/18188)) ([61cae58](https://github.com/lightdash/lightdash/commit/61cae5835912548bf1462ad4db9b01fa6ab081d6))
+
+# [0.2180.0](https://github.com/lightdash/lightdash/compare/0.2179.2...0.2180.0) (2025-11-18)
+
+
+### Features
+
+* add Databricks OAuth U2M authentication support ([#18098](https://github.com/lightdash/lightdash/issues/18098)) ([0edaf9a](https://github.com/lightdash/lightdash/commit/0edaf9aaebdc7d2d75da003e3478f88c00271cd9)), closes [#18116](https://github.com/lightdash/lightdash/issues/18116) [#18116](https://github.com/lightdash/lightdash/issues/18116) [#18069](https://github.com/lightdash/lightdash/issues/18069) [#18069](https://github.com/lightdash/lightdash/issues/18069) [#18130](https://github.com/lightdash/lightdash/issues/18130) [#18130](https://github.com/lightdash/lightdash/issues/18130) [#18134](https://github.com/lightdash/lightdash/issues/18134) [#18134](https://github.com/lightdash/lightdash/issues/18134) [#18074](https://github.com/lightdash/lightdash/issues/18074) [#18074](https://github.com/lightdash/lightdash/issues/18074) [#18077](https://github.com/lightdash/lightdash/issues/18077) [#18077](https://github.com/lightdash/lightdash/issues/18077) [#18133](https://github.com/lightdash/lightdash/issues/18133) [#18133](https://github.com/lightdash/lightdash/issues/18133) [#18143](https://github.com/lightdash/lightdash/issues/18143) [#18143](https://github.com/lightdash/lightdash/issues/18143) [#18065](https://github.com/lightdash/lightdash/issues/18065) [#18065](https://github.com/lightdash/lightdash/issues/18065) [#18144](https://github.com/lightdash/lightdash/issues/18144) [#18125](https://github.com/lightdash/lightdash/issues/18125)
+
+## [0.2179.2](https://github.com/lightdash/lightdash/compare/0.2179.1...0.2179.2) (2025-11-18)
+
+
+### Bug Fixes
+
+* remove streaming error check from retry condition ([#18187](https://github.com/lightdash/lightdash/issues/18187)) ([1d9c558](https://github.com/lightdash/lightdash/commit/1d9c558d9cb4b20e412a5eb056df229ecec968ad))
+
+## [0.2179.1](https://github.com/lightdash/lightdash/compare/0.2179.0...0.2179.1) (2025-11-18)
+
+
+### Bug Fixes
+
+* disable embeddings in AI agent integration tests ([#18183](https://github.com/lightdash/lightdash/issues/18183)) ([2ed86ae](https://github.com/lightdash/lightdash/commit/2ed86ae311f50db0dc8c892e52a4f0199e342a0b))
+* handle multibyte characters in JSONL streaming ([#18185](https://github.com/lightdash/lightdash/issues/18185)) ([2e9d8f3](https://github.com/lightdash/lightdash/commit/2e9d8f32f4eff59c8e239ee91aca168360533963)), closes [#17290](https://github.com/lightdash/lightdash/issues/17290)
+
+# [0.2179.0](https://github.com/lightdash/lightdash/compare/0.2178.5...0.2179.0) (2025-11-18)
+
+
+### Features
+
+* add S3BaseClient with configurable credential providers ([#18128](https://github.com/lightdash/lightdash/issues/18128)) ([3616cdb](https://github.com/lightdash/lightdash/commit/3616cdbf2dbfc5631b7843cea29a11acc1648c63))
+
 ## [0.2178.5](https://github.com/lightdash/lightdash/compare/0.2178.4...0.2178.5) (2025-11-18)
 
 
