@@ -7,10 +7,10 @@ import { Database } from '../../database';
 import { LightdashConfig } from '../../config/lightdashConfig';
 import { UserModel } from '../../models/UserModel';
 import { ProjectModel } from '../../models/ProjectModel';
-import { getWarehouseClient } from '../../warehouse/getWarehouseClient';
 import { FileParserService } from './FileParserService';
-import { WarehouseClient } from '../../warehouse/types';
+import { AdhocTableExploreService } from './AdhocTableExploreService';
 import { NotFoundError, ForbiddenError } from '@lightdash/common';
+import { warehouseClientFromCredentials } from '@lightdash/warehouses';
 import {
     AdhocTableCreateRequest,
     AdhocTableRecord,
@@ -44,15 +44,10 @@ export class AdhocTableService {
         userUuid: string,
         request: AdhocTableCreateRequest,
     ): Promise<AdhocTableRecord> {
-        // Verify user has access to project
+        // Verify project exists
         const project = await this.projectModel.getProject(projectUuid);
         if (!project) {
             throw new NotFoundError(`Project ${projectUuid} not found`);
-        }
-
-        const user = await this.userModel.getUserByUuid(userUuid);
-        if (!user) {
-            throw new NotFoundError(`User ${userUuid} not found`);
         }
 
         // Parse file
@@ -71,14 +66,15 @@ export class AdhocTableService {
             userUuid,
         );
 
-        // Get warehouse client and create table
-        const warehouse = await getWarehouseClient(
-            this.database,
-            project.warehouseConnection,
-        );
+        // Get warehouse credentials and create client
+        const credentials =
+            await this.projectModel.getWarehouseCredentialsForProject(projectUuid);
 
+        const warehouseClient = warehouseClientFromCredentials(credentials);
+
+        // Create table in warehouse
         await this.createWarehouseTable(
-            warehouse,
+            warehouseClient,
             warehouseTableName,
             parseResult.rows,
             parseResult.columns,
@@ -93,7 +89,7 @@ export class AdhocTableService {
                 name: request.tableName,
                 description: request.description,
                 warehouse_table_name: warehouseTableName,
-                warehouse_type: project.warehouseConnection.type,
+                warehouse_type: credentials.type,
                 scope: request.scope,
                 retention: request.retention,
                 retention_days: request.retentionDays,
@@ -140,7 +136,7 @@ export class AdhocTableService {
 
         const records = await query.orderBy('created_at', 'desc');
 
-        return records.map((record) => ({
+        return records.map((record: any) => ({
             uuid: record.uuid,
             name: record.name,
             description: record.description,
@@ -192,10 +188,10 @@ export class AdhocTableService {
     }
 
     /**
-     * Create actual table in warehouse
+     * Create actual table in warehouse using adapter methods
      */
     private async createWarehouseTable(
-        warehouse: WarehouseClient,
+        warehouse: any,
         tableName: string,
         rows: Record<string, unknown>[],
         columns: Array<{
@@ -204,9 +200,8 @@ export class AdhocTableService {
             type: string;
         }>,
     ): Promise<void> {
-        // This will be implemented per warehouse type
-        // For now, define the interface that warehouse adapters must implement
-        
+        // Check if warehouse supports createTableFromData method
+        // This is implemented per warehouse type in their adapter classes
         if (!('createTableFromData' in warehouse)) {
             throw new Error(
                 `Warehouse type does not support adhoc table creation`,
