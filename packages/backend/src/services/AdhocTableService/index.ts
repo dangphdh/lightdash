@@ -108,7 +108,22 @@ export class AdhocTableService {
             .returning('*')
             .first();
 
-        return this.formatRecord(record);
+        // Register explore for the uploaded table
+        try {
+            await this.registerExplore(
+                projectUuid,
+                record.uuid,
+                warehouseTableName,
+                parseResult.columns,
+                credentials.type,
+            );
+        } catch (error) {
+            // Log error but don't fail - table is created, just explore registration failed
+            // TODO: Add proper logging
+            console.error('Failed to register explore for adhoc table:', error);
+        }
+
+        return AdhocTableService.formatRecord(record);
     }
 
     /**
@@ -157,7 +172,7 @@ export class AdhocTableService {
             .whereNull('deleted_at')
             .first();
 
-        return record ? this.formatRecord(record) : null;
+        return record ? AdhocTableService.formatRecord(record) : null;
     }
 
     /**
@@ -230,9 +245,54 @@ export class AdhocTableService {
     }
 
     /**
+     * Register adhoc table as an Explore in cached_explore table
+     * This makes the uploaded table queryable via the Explorer interface
+     */
+    async registerExplore(
+        projectUuid: string,
+        adhocTableUuid: string,
+        warehouseTableName: string,
+        columns: Array<{ name: string; type: string; displayType: string }>,
+        warehouseType: string,
+    ): Promise<string> {
+        // Generate Explore object using AdhocTableExploreService
+        const exploreService = new AdhocTableExploreService();
+        
+        // Map columns to ColumnDefinition format
+        const columnDefs: any[] = columns.map((col) => ({
+            name: col.name,
+            type: col.type,
+            nullable: true,
+        }));
+        
+        const warehouseTypeEnum = warehouseType as string;
+        const explore = exploreService.generateExplore(
+            adhocTableUuid,
+            warehouseTableName,
+            columnDefs,
+            warehouseTypeEnum as any,
+        );
+
+        // Insert into cached_explore table
+        const result = await this.database('cached_explore')
+            .insert({
+                project_uuid: projectUuid,
+                name: adhocTableUuid,
+                table_names: [adhocTableUuid],
+                explore: JSON.stringify(explore),
+            })
+            .onConflict(['project_uuid', 'name'])
+            .merge()
+            .returning('cached_explore_uuid')
+            .first();
+
+        return result.cached_explore_uuid;
+    }
+
+    /**
      * Format database record to AdhocTableRecord type
      */
-    private formatRecord(record: any): AdhocTableRecord {
+    private static formatRecord(record: any): AdhocTableRecord {
         return {
             uuid: record.uuid,
             projectUuid: record.project_uuid,
