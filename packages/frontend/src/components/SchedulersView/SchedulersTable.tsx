@@ -48,7 +48,7 @@ import {
     type FC,
     type UIEvent,
 } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { usePaginatedSchedulers } from '../../features/scheduler/hooks/useScheduler';
 import {
     useSchedulerFilters,
@@ -102,6 +102,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
     const tableContainerRef = useRef<HTMLDivElement>(null);
     const rowVirtualizerInstanceRef =
         useRef<MRT_Virtualizer<HTMLDivElement, HTMLTableRowElement>>(null);
+    const [, setSearchParams] = useSearchParams();
 
     const {
         search,
@@ -162,26 +163,17 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
 
     // Compute available users from loaded schedulers
     const availableUsers = useMemo(() => {
-        const userMap = new Map<
-            string,
-            { userUuid: string; firstName: string; lastName: string }
-        >();
+        const userMap = new Map<string, { userUuid: string; name: string }>();
         flatData.forEach((scheduler) => {
             if (scheduler.createdBy && scheduler.createdByName) {
-                const nameParts = scheduler.createdByName.split(' ');
-                const firstName = nameParts[0] || '';
-                const lastName = nameParts.slice(1).join(' ') || '';
                 userMap.set(scheduler.createdBy, {
                     userUuid: scheduler.createdBy,
-                    firstName,
-                    lastName,
+                    name: scheduler.createdByName,
                 });
             }
         });
         return Array.from(userMap.values()).sort((a, b) =>
-            `${a.firstName} ${a.lastName}`.localeCompare(
-                `${b.firstName} ${b.lastName}`,
-            ),
+            a.name.localeCompare(b.name),
         );
     }, [flatData]);
 
@@ -402,7 +394,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                 enableSorting: false,
                 size: 160,
                 Header: ({ column }) => (
-                    <Group gap="two">
+                    <Group gap="two" wrap="nowrap">
                         <MantineIcon icon={IconRun} color="gray.6" />
                         {column.columnDef.header}
                     </Group>
@@ -440,6 +432,9 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                                             {latestRun.logCounts.error} failed
                                         </Text>
                                     )}
+                                    <Text fz="xs" c="gray.4" fs="italic">
+                                        Click to view run history
+                                    </Text>
                                 </Stack>
                             }
                         >
@@ -452,6 +447,13 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                                         size="xs"
                                     />
                                 }
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => {
+                                    setSearchParams({
+                                        tab: 'run-history',
+                                        schedulerUuid: item.schedulerUuid,
+                                    });
+                                }}
                             >
                                 {statusConfig.label}
                             </Badge>
@@ -643,7 +645,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                 },
             },
         ],
-        [project, projectUuid, getSlackChannelName],
+        [project, projectUuid, getSlackChannelName, setSearchParams],
     );
 
     const table = useMantineReactTable({
