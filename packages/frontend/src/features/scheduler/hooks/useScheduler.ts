@@ -3,12 +3,15 @@ import {
     type AnyType,
     type ApiError,
     type ApiJobStatusResponse,
+    type ApiSchedulerRunLogsResponse,
+    type ApiSchedulerRunsResponse,
     type ApiSchedulersResponse,
     type ApiTestSchedulerResponse,
     type CreateSchedulerAndTargets,
     type KnexPaginateArgs,
     type SchedulerAndTargets,
-    type SchedulerWithLogs,
+    type SchedulerRunLog,
+    type SchedulerRunStatus,
 } from '@lightdash/common';
 import { notifications } from '@mantine/notifications';
 import {
@@ -30,14 +33,19 @@ const getScheduler = async (uuid: string) =>
         body: undefined,
     });
 
-const getSchedulerLogs = async (
+const getSchedulerRuns = async (
     projectUuid: string,
     paginateArgs: KnexPaginateArgs,
     searchQuery?: string,
+    sortBy?: 'scheduledTime' | 'createdAt',
+    sortDirection?: 'asc' | 'desc',
     filters?: {
-        statuses?: SchedulerJobStatus[];
+        schedulerUuid?: string;
+        statuses?: SchedulerRunStatus[];
         createdByUserUuids?: string[];
         destinations?: DestinationType[];
+        resourceType?: 'chart' | 'dashboard';
+        resourceUuids?: string[];
     },
 ) => {
     const params = new URLSearchParams({
@@ -47,6 +55,18 @@ const getSchedulerLogs = async (
 
     if (searchQuery) {
         params.set('searchQuery', searchQuery);
+    }
+
+    if (sortBy) {
+        params.set('sortBy', sortBy);
+    }
+
+    if (sortDirection) {
+        params.set('sortDirection', sortDirection);
+    }
+
+    if (filters?.schedulerUuid) {
+        params.set('schedulerUuids', filters.schedulerUuid);
     }
 
     if (filters?.statuses && filters.statuses.length > 0) {
@@ -61,11 +81,30 @@ const getSchedulerLogs = async (
         params.set('destinations', filters.destinations.join(','));
     }
 
+    if (filters?.resourceType) {
+        params.set('resourceType', filters.resourceType);
+    }
+
+    if (filters?.resourceUuids && filters.resourceUuids.length > 0) {
+        params.set('resourceUuids', filters.resourceUuids.join(','));
+    }
+
     return lightdashApi({
-        url: `/schedulers/${projectUuid}/logs?${params.toString()}`,
+        url: `/schedulers/${projectUuid}/runs?${params.toString()}`,
         method: 'GET',
         body: undefined,
-    }) as unknown as Promise<LogsResponse>;
+    }) as unknown as Promise<RunsResponse>;
+};
+
+const getRunLogs = async (runId: string) => {
+    const response = await fetch(`/api/v1/schedulers/runs/${runId}/logs`, {
+        credentials: 'include',
+    });
+    if (!response.ok) {
+        throw new Error(`Failed to fetch run logs: ${response.statusText}`);
+    }
+    const data = (await response.json()) as ApiSchedulerRunLogsResponse;
+    return data.results;
 };
 
 const getPaginatedSchedulers = async (
@@ -148,47 +187,50 @@ export const useScheduler = (
         ...useQueryOptions,
     });
 
-type LogsResponse = {
-    pagination?: {
-        page: number;
-        pageSize: number;
-        totalPageCount: number;
-        totalResults: number;
-    };
-    data: SchedulerWithLogs;
-};
+type RunsResponse = ApiSchedulerRunsResponse['results'];
 
-export const useSchedulerLogs = ({
+export const useSchedulerRuns = ({
     projectUuid,
     paginateArgs,
     searchQuery,
+    sortBy,
+    sortDirection,
     filters,
 }: {
     projectUuid: string;
     paginateArgs?: KnexPaginateArgs;
     searchQuery?: string;
+    sortBy?: 'scheduledTime' | 'createdAt';
+    sortDirection?: 'asc' | 'desc';
     filters?: {
-        statuses?: SchedulerJobStatus[];
+        schedulerUuid?: string;
+        statuses?: SchedulerRunStatus[];
         createdByUserUuids?: string[];
         destinations?: DestinationType[];
+        resourceType?: 'chart' | 'dashboard';
+        resourceUuids?: string[];
     };
 }) => {
-    return useInfiniteQuery<LogsResponse>({
+    return useInfiniteQuery<RunsResponse>({
         queryKey: [
-            'schedulerLogs',
+            'schedulerRuns',
             projectUuid,
             paginateArgs,
             searchQuery,
+            sortBy,
+            sortDirection,
             filters,
         ],
         queryFn: async ({ pageParam = 0 }) => {
-            return getSchedulerLogs(
+            return getSchedulerRuns(
                 projectUuid,
                 {
                     page: (pageParam as number) + 1,
                     pageSize: paginateArgs?.pageSize || 10,
                 },
                 searchQuery,
+                sortBy,
+                sortDirection,
                 filters,
             );
         },
@@ -200,6 +242,25 @@ export const useSchedulerLogs = ({
         keepPreviousData: true,
         refetchOnWindowFocus: false,
         enabled: !!projectUuid,
+    });
+};
+
+export const useFetchRunLogs = () => {
+    return useMutation<SchedulerRunLog[], ApiError, string>({
+        mutationFn: async (runId: string) => {
+            const data = await getRunLogs(runId);
+            // Filter out SCHEDULED events (there are duplicates in the DB)
+            // Only show STARTED, COMPLETED, and ERROR to see the actual execution flow
+            const filteredLogs = data.logs.filter(
+                (log) => log.status !== SchedulerJobStatus.SCHEDULED,
+            );
+            // Sort newest first (descending)
+            return filteredLogs.sort(
+                (a, b) =>
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime(),
+            );
+        },
     });
 };
 
