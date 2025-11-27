@@ -1,3 +1,104 @@
+## [0.2209.4](https://github.com/lightdash/lightdash/compare/0.2209.3...0.2209.4) (2025-11-26)
+
+
+### Bug Fixes
+
+* race condition on map rendering ([#18361](https://github.com/lightdash/lightdash/issues/18361)) ([121b409](https://github.com/lightdash/lightdash/commit/121b4097f8333663e2395dab1ae92fe157fde989))
+
+## [0.2209.3](https://github.com/lightdash/lightdash/compare/0.2209.2...0.2209.3) (2025-11-26)
+
+
+### Bug Fixes
+
+* improve warehouse-specific date interval handling for comparisons ([#18360](https://github.com/lightdash/lightdash/issues/18360)) ([82a5191](https://github.com/lightdash/lightdash/commit/82a5191abec4d9aa0740ac239e969681baecf143))
+
+## [0.2209.2](https://github.com/lightdash/lightdash/compare/0.2209.1...0.2209.2) (2025-11-26)
+
+
+### Bug Fixes
+
+* handle empty metrics object in dbt manifest ([#18355](https://github.com/lightdash/lightdash/issues/18355)) ([4e12b00](https://github.com/lightdash/lightdash/commit/4e12b001c3885874cd4d2d260140b6490a0b9b05))
+
+## [0.2209.1](https://github.com/lightdash/lightdash/compare/0.2209.0...0.2209.1) (2025-11-26)
+
+
+### Bug Fixes
+
+* add warehouse-specific interval syntax for date arithmetic ([#18348](https://github.com/lightdash/lightdash/issues/18348)) ([b369460](https://github.com/lightdash/lightdash/commit/b3694609b49e837978ba8c885977ce50612daf2d))
+
+# [0.2209.0](https://github.com/lightdash/lightdash/compare/0.2208.0...0.2209.0) (2025-11-26)
+
+
+### Features
+
+* map charts ([#18301](https://github.com/lightdash/lightdash/issues/18301)) ([0589e8d](https://github.com/lightdash/lightdash/commit/0589e8df0d13aa60c99711fd5674eaf7a75b2677))
+
+# [0.2208.0](https://github.com/lightdash/lightdash/compare/0.2207.0...0.2208.0) (2025-11-26)
+
+
+### Features
+
+* get finest rank when multiple selected time dims on pop ([#18343](https://github.com/lightdash/lightdash/issues/18343)) ([9b4e498](https://github.com/lightdash/lightdash/commit/9b4e498f4973900bb61ae4fe40bf96afa032bbd2))
+
+# [0.2207.0](https://github.com/lightdash/lightdash/compare/0.2206.1...0.2207.0) (2025-11-26)
+
+
+### Features
+
+* add pop on explorer ([#18308](https://github.com/lightdash/lightdash/issues/18308)) ([09e4d44](https://github.com/lightdash/lightdash/commit/09e4d44bdb07e938e0e7c5633ffd571740cbfcd6))
+
+## [0.2206.1](https://github.com/lightdash/lightdash/compare/0.2206.0...0.2206.1) (2025-11-26)
+
+
+### Bug Fixes
+
+* take pivotDetails into consideration when calculating min/max values for reference lines ([#18337](https://github.com/lightdash/lightdash/issues/18337)) ([c3fe513](https://github.com/lightdash/lightdash/commit/c3fe5131b10208242304b0fe56a187bf9ff33e1a))
+
+# [0.2206.0](https://github.com/lightdash/lightdash/compare/0.2205.0...0.2206.0) (2025-11-25)
+
+
+### Features
+
+* add custom label option to gauge charts ([#18290](https://github.com/lightdash/lightdash/issues/18290)) ([1f15b4e](https://github.com/lightdash/lightdash/commit/1f15b4e0dd2c747be901af07a21dc181d359dc22))
+
+# [0.2205.0](https://github.com/lightdash/lightdash/compare/0.2204.0...0.2205.0) (2025-11-24)
+
+
+### Bug Fixes
+
+* allow sql_from if no model_name ([#18302](https://github.com/lightdash/lightdash/issues/18302)) ([b725ee7](https://github.com/lightdash/lightdash/commit/b725ee7d05fa8cf6dab20be80982b31ebec0a556))
+
+
+### Features
+
+* add lightdash model compile + deploy ([#18312](https://github.com/lightdash/lightdash/issues/18312)) ([3111d7b](https://github.com/lightdash/lightdash/commit/3111d7b9acb06f79edf570e0cb36fcba62f9bf77)), closes [#150](https://github.com/lightdash/lightdash/issues/150)
+
+# [0.2204.0](https://github.com/lightdash/lightdash/compare/0.2203.0...0.2204.0) (2025-11-24)
+
+
+### Features
+
+* add linting for lightdash model file ([#18283](https://github.com/lightdash/lightdash/issues/18283)) ([6e0646a](https://github.com/lightdash/lightdash/commit/6e0646a9b71735e41786112d7f32d9bbc4c2f9a9))
+
+# [0.2203.0](https://github.com/lightdash/lightdash/compare/0.2202.1...0.2203.0) (2025-11-24)
+
+
+### Bug Fixes
+
+* handle gauge values above max in color calculation ([#18289](https://github.com/lightdash/lightdash/issues/18289)) ([ce89df5](https://github.com/lightdash/lightdash/commit/ce89df50456e6f7dc9e5187fa49b29a24bd4a73f))
+
+
+### Features
+
+* support decimal values in gauge number inputs ([#18288](https://github.com/lightdash/lightdash/issues/18288)) ([1d52837](https://github.com/lightdash/lightdash/commit/1d5283799448dd978cb706ab8220747ece27e663))
+
+## [0.2202.1](https://github.com/lightdash/lightdash/compare/0.2202.0...0.2202.1) (2025-11-24)
+
+
+### Bug Fixes
+
+* Don't emit onChange if user is in middle of typing ([#18292](https://github.com/lightdash/lightdash/issues/18292)) ([3fe9df1](https://github.com/lightdash/lightdash/commit/3fe9df1b70068c3bf57187e1dde248c68f01fe49))
+
 # [0.2202.0](https://github.com/lightdash/lightdash/compare/0.2201.0...0.2202.0) (2025-11-21)
 
 

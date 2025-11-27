@@ -1,4 +1,4 @@
-import { getItemId } from '@lightdash/common';
+import { getItemId, getItemLabelWithoutTableName } from '@lightdash/common';
 import {
     Center,
     Checkbox,
@@ -6,6 +6,7 @@ import {
     NumberInput,
     SegmentedControl,
     Stack,
+    TextInput,
     Tooltip,
 } from '@mantine/core';
 import { memo, type FC } from 'react';
@@ -25,6 +26,7 @@ export const GaugeDisplayConfig: FC = memo(() => {
 
     const {
         chartConfig: {
+            selectedField: selectedFieldId,
             min,
             setMin,
             max,
@@ -34,6 +36,8 @@ export const GaugeDisplayConfig: FC = memo(() => {
             getField,
             showAxisLabels,
             setShowAxisLabels,
+            customLabel,
+            setCustomLabel,
         },
         numericMetrics,
     } = visualizationConfig;
@@ -42,6 +46,7 @@ export const GaugeDisplayConfig: FC = memo(() => {
         ? GaugeValueMode.FIELD
         : GaugeValueMode.FIXED;
     const maxField = getField(maxFieldId);
+    const selectedField = getField(selectedFieldId);
 
     const numericMetricsList = Object.values(numericMetrics ?? {});
 
@@ -56,6 +61,8 @@ export const GaugeDisplayConfig: FC = memo(() => {
                         value={min}
                         onChange={(value) => setMin(Number(value))}
                         placeholder="0"
+                        precision={2}
+                        removeTrailingZeros={true}
                     />
                     <Group spacing="xs" align="flex-end">
                         {maxValueMode === GaugeValueMode.FIXED ? (
@@ -65,6 +72,8 @@ export const GaugeDisplayConfig: FC = memo(() => {
                                 value={max}
                                 onChange={(value) => setMax(Number(value))}
                                 placeholder="100"
+                                precision={2}
+                                removeTrailingZeros={true}
                                 style={{ flex: 1 }}
                             />
                         ) : (
@@ -140,6 +149,22 @@ export const GaugeDisplayConfig: FC = memo(() => {
                         checked={showAxisLabels}
                         onChange={(event) =>
                             setShowAxisLabels(event.currentTarget.checked)
+                        }
+                    />
+
+                    <TextInput
+                        label="Custom label"
+                        description="Override the default field label"
+                        value={customLabel || ''}
+                        onChange={(event) =>
+                            setCustomLabel(
+                                event.currentTarget.value || undefined,
+                            )
+                        }
+                        placeholder={
+                            selectedField
+                                ? getItemLabelWithoutTableName(selectedField)
+                                : "e.g. 'Sales'"
                         }
                     />
                 </Config.Section>
