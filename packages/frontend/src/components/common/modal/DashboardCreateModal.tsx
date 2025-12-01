@@ -8,6 +8,7 @@ import {
     Stack,
     TextInput,
     Textarea,
+    useMantineColorScheme,
     type ModalProps,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
@@ -43,6 +44,7 @@ const DashboardCreateModal: FC<DashboardCreateModalProps> = ({
     ...modalProps
 }) => {
     const { user } = useApp();
+    const { colorScheme } = useMantineColorScheme();
     const { mutateAsync: createDashboard, isLoading: isCreatingDashboard } =
         useCreateMutation(projectUuid);
 
@@ -75,6 +77,7 @@ const DashboardCreateModal: FC<DashboardCreateModalProps> = ({
         isSuccess,
     } = useSpaceSummaries(projectUuid, true, {
         staleTime: 0,
+        enabled: modalProps.opened, // Only fetch when modal is open
         select: (data) => {
             // Only get spaces that the user can create dashboards to
             return data.filter((space) =>
@@ -181,12 +184,13 @@ const DashboardCreateModal: FC<DashboardCreateModalProps> = ({
     if (isLoadingSpaces || !spaces) return null;
 
     return (
-        <MantineProvider inherit theme={{ colorScheme: 'light' }}>
+        <MantineProvider inherit theme={{ colorScheme }}>
             <MantineModal
                 {...modalProps}
                 title="Create Dashboard"
                 icon={IconLayoutDashboard}
                 onClose={() => handleClose()}
+                modalRootProps={{ keepMounted: false }}
                 actions={
                     <Group position="right" w="100%">
                         {shouldShowNewSpaceButton && (

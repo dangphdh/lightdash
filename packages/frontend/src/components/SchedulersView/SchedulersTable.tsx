@@ -48,7 +48,7 @@ import {
     type FC,
     type UIEvent,
 } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { usePaginatedSchedulers } from '../../features/scheduler/hooks/useScheduler';
 import {
     useSchedulerFilters,
@@ -102,6 +102,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
     const tableContainerRef = useRef<HTMLDivElement>(null);
     const rowVirtualizerInstanceRef =
         useRef<MRT_Virtualizer<HTMLDivElement, HTMLTableRowElement>>(null);
+    const [, setSearchParams] = useSearchParams();
 
     const {
         search,
@@ -162,26 +163,17 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
 
     // Compute available users from loaded schedulers
     const availableUsers = useMemo(() => {
-        const userMap = new Map<
-            string,
-            { userUuid: string; firstName: string; lastName: string }
-        >();
+        const userMap = new Map<string, { userUuid: string; name: string }>();
         flatData.forEach((scheduler) => {
             if (scheduler.createdBy && scheduler.createdByName) {
-                const nameParts = scheduler.createdByName.split(' ');
-                const firstName = nameParts[0] || '';
-                const lastName = nameParts.slice(1).join(' ') || '';
                 userMap.set(scheduler.createdBy, {
                     userUuid: scheduler.createdBy,
-                    firstName,
-                    lastName,
+                    name: scheduler.createdByName,
                 });
             }
         });
         return Array.from(userMap.values()).sort((a, b) =>
-            `${a.firstName} ${a.lastName}`.localeCompare(
-                `${b.firstName} ${b.lastName}`,
-            ),
+            a.name.localeCompare(b.name),
         );
     }, [flatData]);
 
@@ -290,7 +282,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                 size: 300,
                 Header: ({ column }) => (
                     <Group gap="two">
-                        <MantineIcon icon={IconTextCaption} color="gray.6" />
+                        <MantineIcon icon={IconTextCaption} color="ldGray.6" />
                         {column.columnDef.header}
                     </Group>
                 ),
@@ -328,7 +320,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                                         fz="xs"
                                         label={
                                             <Stack gap="one" fz="xs">
-                                                <Text c="gray.5" fz="xs">
+                                                <Text c="ldGray.5" fz="xs">
                                                     Schedule type:{' '}
                                                     <Text
                                                         c="white"
@@ -338,7 +330,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                                                         {format()}
                                                     </Text>
                                                 </Text>
-                                                <Text c="gray.5" fz="xs">
+                                                <Text c="ldGray.5" fz="xs">
                                                     Created by:{' '}
                                                     <Text
                                                         c="white"
@@ -370,11 +362,11 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                                     <Group gap="two">
                                         <MantineIcon
                                             icon={IconChartBar}
-                                            color="gray.6"
+                                            color="ldGray.6"
                                             size={12}
                                             strokeWidth={1.5}
                                         />
-                                        <Text fz="xs" c="gray.6">
+                                        <Text fz="xs" c="ldGray.6">
                                             {item.savedChartName}
                                         </Text>
                                     </Group>
@@ -382,11 +374,11 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                                     <Group gap="two">
                                         <MantineIcon
                                             icon={IconLayoutDashboard}
-                                            color="gray.6"
+                                            color="ldGray.6"
                                             strokeWidth={1.5}
                                             size={12}
                                         />
-                                        <Text fz="xs" c="gray.6">
+                                        <Text fz="xs" c="ldGray.6">
                                             {item.dashboardName}
                                         </Text>
                                     </Group>
@@ -402,8 +394,8 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                 enableSorting: false,
                 size: 160,
                 Header: ({ column }) => (
-                    <Group gap="two">
-                        <MantineIcon icon={IconRun} color="gray.6" />
+                    <Group gap="two" wrap="nowrap">
+                        <MantineIcon icon={IconRun} color="ldGray.6" />
                         {column.columnDef.header}
                     </Group>
                 ),
@@ -413,7 +405,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
 
                     if (!latestRun) {
                         return (
-                            <Text fz="xs" c="gray.6">
+                            <Text fz="xs" c="ldGray.6">
                                 No runs yet
                             </Text>
                         );
@@ -434,12 +426,15 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                                         ).toLocaleString()}
                                     </Text>
                                     {latestRun.logCounts && (
-                                        <Text fz="xs" c="gray.5">
+                                        <Text fz="xs" c="ldGray.5">
                                             {latestRun.logCounts.completed}{' '}
                                             completed,{' '}
                                             {latestRun.logCounts.error} failed
                                         </Text>
                                     )}
+                                    <Text fz="xs" c="ldGray.4" fs="italic">
+                                        Click to view run history
+                                    </Text>
                                 </Stack>
                             }
                         >
@@ -452,6 +447,13 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                                         size="xs"
                                     />
                                 }
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => {
+                                    setSearchParams({
+                                        tab: 'run-history',
+                                        schedulerUuid: item.schedulerUuid,
+                                    });
+                                }}
                             >
                                 {statusConfig.label}
                             </Badge>
@@ -466,7 +468,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                 size: 140,
                 Header: ({ column }) => (
                     <Group gap="two" wrap="nowrap">
-                        <MantineIcon icon={IconRadar} color="gray.6" />
+                        <MantineIcon icon={IconRadar} color="ldGray.6" />
                         {column.columnDef.header}
                     </Group>
                 ),
@@ -503,9 +505,9 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                                     <Group gap="two">
                                         <MantineIcon
                                             icon={IconMail}
-                                            color="gray.6"
+                                            color="ldGray.6"
                                         />
-                                        <Text fz="xs" c="gray.6">
+                                        <Text fz="xs" c="ldGray.6">
                                             {slackChannels.length > 0
                                                 ? 'Email,'
                                                 : 'Email'}
@@ -530,7 +532,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                                                 filter: 'grayscale(100%)',
                                             }}
                                         />
-                                        <Text fz="xs" c="gray.6">
+                                        <Text fz="xs" c="ldGray.6">
                                             Slack
                                         </Text>
                                     </Group>
@@ -550,7 +552,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                                             />
                                             <Anchor
                                                 fz="xs"
-                                                c="gray.6"
+                                                c="ldGray.6"
                                                 href={item.options.url}
                                                 target="_blank"
                                                 rel="noreferrer"
@@ -566,7 +568,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                             {item.format !== SchedulerFormat.GSHEETS &&
                                 slackChannels.length === 0 &&
                                 emails.length === 0 && (
-                                    <Text fz="xs" c="gray.6">
+                                    <Text fz="xs" c="ldGray.6">
                                         No destinations
                                     </Text>
                                 )}
@@ -581,14 +583,14 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                 size: 150,
                 Header: ({ column }) => (
                     <Group gap="two">
-                        <MantineIcon icon={IconClock} color="gray.6" />
+                        <MantineIcon icon={IconClock} color="ldGray.6" />
                         {column.columnDef.header}
                     </Group>
                 ),
                 Cell: ({ row }) => {
                     const item = row.original;
                     return (
-                        <Text fz="xs" c="gray.6">
+                        <Text fz="xs" c="ldGray.6">
                             {project &&
                                 getHumanReadableCronExpression(
                                     item.cron,
@@ -606,14 +608,14 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                 size: 130,
                 Header: ({ column }) => (
                     <Group gap="two" wrap="nowrap">
-                        <MantineIcon icon={IconClock} color="gray.6" />
+                        <MantineIcon icon={IconClock} color="ldGray.6" />
                         {column.columnDef.header}
                     </Group>
                 ),
                 Cell: ({ row }) => {
                     const item = row.original;
                     return (
-                        <Text fz="sm" c="gray.7">
+                        <Text fz="sm" c="ldGray.7">
                             {new Date(item.createdAt).toLocaleDateString()}
                         </Text>
                     );
@@ -643,7 +645,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                 },
             },
         ],
-        [project, projectUuid, getSlackChannelName],
+        [project, projectUuid, getSlackChannelName, setSearchParams],
     );
 
     const table = useMantineReactTable({
@@ -668,7 +670,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
         mantinePaperProps: {
             shadow: undefined,
             style: {
-                border: `1px solid ${theme.colors.gray[2]}`,
+                border: `1px solid ${theme.colors.ldGray[2]}`,
                 borderRadius: theme.spacing.sm,
                 boxShadow: theme.shadows.subtle,
                 display: 'flex',
@@ -696,19 +698,19 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                 props.table.getAllColumns().length - 1;
 
             return {
-                bg: 'gray.0',
+                bg: 'ldGray.0',
                 h: '3xl',
                 pos: 'relative',
                 style: {
                     userSelect: 'none',
                     padding: `${theme.spacing.xs} ${theme.spacing.xl}`,
-                    borderBottom: `1px solid ${theme.colors.gray[2]}`,
+                    borderBottom: `1px solid ${theme.colors.ldGray[2]}`,
                     borderRight: props.column.getIsResizing()
                         ? `2px solid ${theme.colors.blue[3]}`
                         : `1px solid ${
                               isLastColumn
                                   ? 'transparent'
-                                  : theme.colors.gray[2]
+                                  : theme.colors.ldGray[2]
                           }`,
                     borderTop: 'none',
                     borderLeft: 'none',
@@ -722,7 +724,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
                     padding: `${theme.spacing.md} ${theme.spacing.xl}`,
                     borderRight: 'none',
                     borderLeft: 'none',
-                    borderBottom: `1px solid ${theme.colors.gray[2]}`,
+                    borderBottom: `1px solid ${theme.colors.ldGray[2]}`,
                     borderTop: 'none',
                 },
             };
@@ -749,7 +751,7 @@ const SchedulersTable: FC<SchedulersTableProps> = ({ projectUuid }) => {
         ),
         icons: {
             IconArrowsSort: () => (
-                <MantineIcon icon={IconArrowsSort} size="md" color="gray.5" />
+                <MantineIcon icon={IconArrowsSort} size="md" color="ldGray.5" />
             ),
             IconSortAscending: () => (
                 <MantineIcon icon={IconArrowUp} size="md" color="blue.6" />

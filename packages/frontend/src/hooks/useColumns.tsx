@@ -13,6 +13,7 @@ import {
     itemsInMetricQuery,
     renderTemplatedUrl,
     type AdditionalMetric,
+    type AnyType,
     type CustomDimension,
     type Dimension,
     type Field,
@@ -23,7 +24,12 @@ import {
     type ResultValue,
     type TableCalculation,
 } from '@lightdash/common';
-import { Group, Tooltip } from '@mantine/core';
+import {
+    Group,
+    Tooltip,
+    useMantineTheme,
+    type MantineTheme,
+} from '@mantine/core';
 import { IconExclamationCircle } from '@tabler/icons-react';
 import { type CellContext } from '@tanstack/react-table';
 import omit from 'lodash/omit';
@@ -49,6 +55,7 @@ import {
     selectCustomDimensions,
     selectMetricOverrides,
     selectParameters,
+    selectPeriodOverPeriod,
     selectSorts,
     selectTableCalculations,
     selectTableName,
@@ -61,13 +68,25 @@ import { useExplorerQuery } from './useExplorerQuery';
 
 export const getItemBgColor = (
     item: Field | AdditionalMetric | TableCalculation | CustomDimension,
+    // Accept both Mantine v6 and v8 themes during migration
+    theme: MantineTheme | { colorScheme?: string; other?: AnyType },
 ): string => {
-    if (isCustomDimension(item)) return '#d2dbe9';
-    if (isField(item) || isAdditionalMetric(item)) {
-        return isDimension(item) ? '#d2dbe9' : '#e4dad0';
-    } else {
-        return '#d2dfd7';
+    const colorScheme = theme.colorScheme || 'light';
+    const bgColors = theme.other?.explorerItemBg || {
+        dimension: { light: '#d2dbe9', dark: '#2a3f5f' },
+        metric: { light: '#e4dad0', dark: '#4a3929' },
+        calculation: { light: '#d2dfd7', dark: '#2a4a2f' },
+    };
+
+    if (isCustomDimension(item)) {
+        return bgColors.dimension[colorScheme];
     }
+    if (isField(item) || isAdditionalMetric(item)) {
+        return isDimension(item)
+            ? bgColors.dimension[colorScheme]
+            : bgColors.metric[colorScheme];
+    }
+    return bgColors.calculation[colorScheme];
 };
 
 export const formatCellContent = (
@@ -294,16 +313,19 @@ export const getValueCell = (
 };
 
 export const useColumns = (): TableColumn[] => {
+    const theme = useMantineTheme();
     const tableName = useExplorerSelector(selectTableName);
     const tableCalculations = useExplorerSelector(selectTableCalculations);
     const customDimensions = useExplorerSelector(selectCustomDimensions);
     const additionalMetrics = useExplorerSelector(selectAdditionalMetrics);
     const sorts = useExplorerSelector(selectSorts);
     const metricOverrides = useExplorerSelector(selectMetricOverrides);
+    const periodOverPeriod = useExplorerSelector(selectPeriodOverPeriod);
 
-    const { activeFields, query } = useExplorerQuery();
+    const { activeFields, query, queryResults } = useExplorerQuery();
     const resultsMetricQuery = query.data?.metricQuery;
     const resultsFields = query.data?.fields;
+    const resultsColumns = queryResults.columns;
 
     const parameters = useExplorerSelector(selectParameters);
 
@@ -404,6 +426,36 @@ export const useColumns = (): TableColumn[] => {
         return result;
     }, [itemsMap, activeFields]);
 
+    // Find period-over-period _previous fields from resultsColumns
+    // Use the base field's metadata (from itemsMap) for labels and formatting
+    const popPreviousFields = useMemo<
+        Map<string, { fieldId: string; item: ItemsMap[string] }>
+    >(() => {
+        if (!periodOverPeriod || !resultsColumns || !itemsMap) return new Map();
+
+        const previousFieldsMap = new Map<
+            string,
+            { fieldId: string; item: ItemsMap[string] }
+        >();
+
+        // Find _previous fields in columns and map them by their base field ID
+        for (const fieldId of Object.keys(resultsColumns)) {
+            if (fieldId.endsWith('_previous')) {
+                const baseFieldId = fieldId.replace(/_previous$/, '');
+                const baseItem = itemsMap[baseFieldId];
+                if (baseItem) {
+                    // Use the base item's metadata for formatting, but indicate it's a PoP column
+                    previousFieldsMap.set(baseFieldId, {
+                        fieldId,
+                        item: baseItem,
+                    });
+                }
+            }
+        }
+
+        return previousFieldsMap;
+    }, [periodOverPeriod, resultsColumns, itemsMap]);
+
     const { data: totals } = useCalculateTotal({
         metricQuery: resultsMetricQuery,
         explore: exploreData?.baseTable,
@@ -420,11 +472,11 @@ export const useColumns = (): TableColumn[] => {
             return [];
         }
 
+        const hasJoins = (exploreData?.joinedTables || []).length > 0;
+
         const validColumns = Object.entries(activeItemsMap).reduce<
             TableColumn[]
         >((acc, [fieldId, item]) => {
-            const hasJoins = (exploreData?.joinedTables || []).length > 0;
-
             const sortIndex = sorts.findIndex((sf) => fieldId === sf.fieldId);
             const isFieldSorted = sortIndex !== -1;
             const column: TableColumn = columnHelper.accessor(
@@ -498,7 +550,7 @@ export const useColumns = (): TableColumn[] => {
                         item,
                         draggable: true,
                         frozen: false,
-                        bgColor: getItemBgColor(item),
+                        bgColor: getItemBgColor(item, theme),
                         sort: isFieldSorted
                             ? {
                                   sortIndex,
@@ -510,7 +562,66 @@ export const useColumns = (): TableColumn[] => {
                     },
                 },
             );
-            return [...acc, column];
+
+            // Add main column
+            const result = [...acc, column];
+
+            // If this field has a corresponding _previous PoP column, add it right after
+            const popField = popPreviousFields.get(fieldId);
+            if (popField) {
+                const { fieldId: popFieldId, item: popItem } = popField;
+
+                // Use the base item's label with "(previous period)" suffix
+                const baseLabel = isField(popItem) ? popItem.label : popFieldId;
+                const popLabel = `${baseLabel} (previous period)`;
+
+                const popColumn: TableColumn = columnHelper.accessor(
+                    (row) => row[popFieldId],
+                    {
+                        id: popFieldId,
+                        header: () => (
+                            <TableHeaderLabelContainer>
+                                {isField(popItem) && hasJoins && (
+                                    <TableHeaderRegularLabel>
+                                        {popItem.tableLabel}{' '}
+                                    </TableHeaderRegularLabel>
+                                )}
+                                <TableHeaderBoldLabel>
+                                    {popLabel}
+                                </TableHeaderBoldLabel>
+                            </TableHeaderLabelContainer>
+                        ),
+                        cell: (
+                            info: CellContext<
+                                ResultRow,
+                                { value: ResultValue }
+                            >,
+                        ) => {
+                            const cellValue = info.getValue();
+                            if (!cellValue) return '-';
+
+                            // Use the PoP item's formatting (inherits from base metric)
+                            return formatItemValue(
+                                popItem,
+                                cellValue.value.raw,
+                                false,
+                                parameters,
+                            );
+                        },
+                        footer: () => null, // No totals for PoP columns
+                        meta: {
+                            item: popItem,
+                            draggable: false,
+                            frozen: false,
+                            bgColor: getItemBgColor(popItem, theme), // Light gray background to indicate PoP column
+                            isReadOnly: true, // Computed column, not editable
+                        },
+                    },
+                );
+                result.push(popColumn);
+            }
+
+            return result;
         }, []);
 
         const invalidColumns = invalidActiveItems.reduce<TableColumn[]>(
@@ -550,6 +661,7 @@ export const useColumns = (): TableColumn[] => {
             },
             [],
         );
+
         return [...validColumns, ...invalidColumns];
     }, [
         hasNoActiveFields,
@@ -559,5 +671,7 @@ export const useColumns = (): TableColumn[] => {
         totals,
         exploreData,
         parameters,
+        popPreviousFields,
+        theme,
     ]);
 };

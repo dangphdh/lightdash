@@ -102,7 +102,7 @@ export const AiChartVisualization: FC<Props> = ({
                         <MantineIcon icon={IconX} color="gray" />
                     </ActionIcon>
                 </Group>
-                <Paper h="100%" bg="gray.0">
+                <Paper h="100%" bg="ldGray.0">
                     <Stack gap="xs" align="center" justify="center" h="100%">
                         <MantineIcon
                             icon={IconExclamationCircle}
@@ -143,6 +143,7 @@ export const AiChartVisualization: FC<Props> = ({
                             <AiChartQuickOptions
                                 message={message}
                                 projectUuid={projectUuid}
+                                agentUuid={agentUuid}
                                 artifactData={artifactData}
                                 saveChartOptions={{
                                     name: queryExecutionHandle.data.metadata

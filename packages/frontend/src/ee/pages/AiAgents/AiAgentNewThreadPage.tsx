@@ -67,7 +67,7 @@ const AiAgentNewThreadPage: FC = () => {
                                     <Popover.Target>
                                         <ActionIcon
                                             variant="subtle"
-                                            color="gray.6"
+                                            color="ldGray.6"
                                         >
                                             <MantineIcon
                                                 icon={IconInfoCircle}
@@ -94,6 +94,17 @@ const AiAgentNewThreadPage: FC = () => {
                                 </Popover>
                             )}
                         </Group>
+                        {agent.description && (
+                            <Text
+                                size="sm"
+                                c="ldGray.6"
+                                ta="center"
+                                maw={600}
+                                style={{ whiteSpace: 'pre-wrap' }}
+                            >
+                                {agent.description}
+                            </Text>
+                        )}
                         {agent.tags && (
                             <Group gap="xxs">
                                 {agent.tags.map((tag, i) => (

@@ -28,6 +28,8 @@ import {
 import * as Sentry from '@sentry/node';
 import { Knex } from 'knex';
 import { groupBy } from 'lodash';
+import NodeCache from 'node-cache';
+
 import {
     DashboardsTableName,
     DashboardVersionsTableName,
@@ -74,7 +76,15 @@ import type { GetDashboardDetailsQuery } from './DashboardModel/DashboardModel';
 type SpaceModelArguments = {
     database: Knex;
 };
+// Initialize cache with 30 seconds TTL
 
+const spaceRootCache =
+    process.env.EXPERIMENTAL_CACHE === 'true'
+        ? new NodeCache({
+              stdTTL: 30, // time to live in seconds
+              checkperiod: 60, // cleanup interval in seconds
+          })
+        : undefined;
 export class SpaceModel {
     private database: Knex;
 
@@ -976,7 +986,8 @@ export class SpaceModel {
     }
 
     private async _getGroupAccess(spaceUuid: string): Promise<SpaceGroup[]> {
-        const spaceOrRootUuid = await this.getSpaceRoot(spaceUuid);
+        const { spaceRoot: spaceOrRootUuid } =
+            await this.getSpaceRootFromCacheOrDB(spaceUuid);
 
         const access = await this.database
             .table(SpaceGroupAccessTableName)
@@ -1005,7 +1016,8 @@ export class SpaceModel {
         userUuid: string,
         spaceUuid: string,
     ): Promise<SpaceShare[]> {
-        const spaceOrRootUuid = await this.getSpaceRoot(spaceUuid);
+        const { spaceRoot: spaceOrRootUuid } =
+            await this.getSpaceRootFromCacheOrDB(spaceUuid);
         return (
             (
                 await this._getSpaceAccess([spaceOrRootUuid], {
@@ -1022,7 +1034,8 @@ export class SpaceModel {
         // Get a normalized list of root space UUIDs if the spaces are nested
         const spacesWithRootSpaceUuid = await Promise.all(
             spaceUuids.map(async (spaceUuid) => {
-                const root = await this.getSpaceRoot(spaceUuid);
+                const { spaceRoot: root } =
+                    await this.getSpaceRootFromCacheOrDB(spaceUuid);
 
                 return { rootSpaceUuid: root, spaceUuid };
             }),
@@ -1538,7 +1551,8 @@ export class SpaceModel {
 
     async getFullSpace(spaceUuid: string): Promise<Space> {
         const space = await this.get(spaceUuid);
-        const rootSpaceUuid = await this.getSpaceRoot(spaceUuid);
+        const { spaceRoot: rootSpaceUuid } =
+            await this.getSpaceRootFromCacheOrDB(spaceUuid);
         const breadcrumbs = await this.getSpaceBreadcrumbs(
             spaceUuid,
             space.projectUuid,
@@ -1945,7 +1959,8 @@ export class SpaceModel {
      * @returns True if the space is a root space, false otherwise
      */
     async isRootSpace(spaceUuid: string): Promise<boolean> {
-        const rootSpaceUuid = await this.getSpaceRoot(spaceUuid);
+        const { spaceRoot: rootSpaceUuid } =
+            await this.getSpaceRootFromCacheOrDB(spaceUuid);
         return rootSpaceUuid === spaceUuid;
     }
 
@@ -1959,33 +1974,47 @@ export class SpaceModel {
      * @param spaceUuid Space UUID to get the root for
      * @returns Root space UUID (or itself if it's already a root space)
      */
-    async getSpaceRoot(spaceUuid: string): Promise<string> {
-        return this.database.transaction(async (trx) => {
-            const space = await trx(SpaceTableName)
-                .select(['path', 'project_id'])
-                .where('space_uuid', spaceUuid)
-                .first();
+    async getSpaceRootFromCacheOrDB(spaceUuid: string) {
+        const cacheKey = spaceUuid;
+        // Try to get from cache first
+        const cachedSpaceRoot = spaceRootCache?.get<string>(cacheKey);
 
-            if (!space || !space.path) {
-                throw new NotFoundError(
-                    `Space with uuid ${spaceUuid} does not exist`,
-                );
-            }
+        if (cachedSpaceRoot) {
+            // Return cached user
+            return { spaceRoot: cachedSpaceRoot, cacheHit: true };
+        }
+        // If not in cache, get from database
+        const spaceRoot = await this.getSpaceRoot(spaceUuid);
+        // Store in cache
+        spaceRootCache?.set(cacheKey, spaceRoot);
+        return { spaceRoot, cacheHit: false };
+    }
 
-            const root = await trx(SpaceTableName)
-                .select('space_uuid')
-                .whereRaw('nlevel(path) = 1')
-                .andWhereRaw('path @> ?', [space.path])
-                .andWhere('project_id', space.project_id)
-                .first();
+    private async getSpaceRoot(spaceUuid: string): Promise<string> {
+        const space = await this.database(SpaceTableName)
+            .select(['path', 'project_id'])
+            .where('space_uuid', spaceUuid)
+            .first();
 
-            if (!root) {
-                throw new NotFoundError(
-                    `Root space for space for ${spaceUuid} not found`,
-                );
-            }
+        if (!space || !space.path) {
+            throw new NotFoundError(
+                `Space with uuid ${spaceUuid} does not exist`,
+            );
+        }
 
-            return root.space_uuid;
-        });
+        const root = await this.database(SpaceTableName)
+            .select('space_uuid')
+            .whereRaw('nlevel(path) = 1')
+            .andWhereRaw('path @> ?', [space.path])
+            .andWhere('project_id', space.project_id)
+            .first();
+
+        if (!root) {
+            throw new NotFoundError(
+                `Root space for space for ${spaceUuid} not found`,
+            );
+        }
+
+        return root.space_uuid;
     }
 }

@@ -13,8 +13,7 @@ import classes from './FormatFilter.module.css';
 
 type User = {
     userUuid: string;
-    firstName: string;
-    lastName: string;
+    name: string;
 };
 
 interface CreatedByFilterProps {
@@ -40,7 +39,7 @@ const CreatedByFilter: FC<CreatedByFilterProps> = ({
                 >
                     <Button
                         h={32}
-                        c="gray.7"
+                        c="ldGray.7"
                         fw={500}
                         fz="sm"
                         variant="default"
@@ -80,7 +79,7 @@ const CreatedByFilter: FC<CreatedByFilterProps> = ({
             </Popover.Target>
             <Popover.Dropdown p="sm">
                 <Stack gap={4}>
-                    <Text fz="xs" c="dark.3" fw={600}>
+                    <Text fz="xs" c="ldDark.3" fw={600}>
                         Filter by created by:
                     </Text>
 
@@ -89,7 +88,7 @@ const CreatedByFilter: FC<CreatedByFilterProps> = ({
                             {availableUsers.map((user) => (
                                 <Checkbox
                                     key={user.userUuid}
-                                    label={`${user.firstName} ${user.lastName}`}
+                                    label={user.name}
                                     checked={selectedCreatedByUserUuids.includes(
                                         user.userUuid,
                                     )}

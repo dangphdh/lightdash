@@ -18,6 +18,7 @@ import {
     Text,
     Title,
     Tooltip,
+    useMantineColorScheme,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
@@ -72,7 +73,6 @@ import { useFeatureFlagEnabled } from '../../../hooks/useFeatureFlagEnabled';
 import { useProject } from '../../../hooks/useProject';
 import { useUpdateMutation } from '../../../hooks/useSavedQuery';
 import useSearchParams from '../../../hooks/useSearchParams';
-import { useSpaceSummaries } from '../../../hooks/useSpaces';
 import { Can } from '../../../providers/Ability';
 import useApp from '../../../providers/App/useApp';
 import {
@@ -112,6 +112,8 @@ const SavedChartsHeader: FC = () => {
     const spaceUuid = useSearchParams('fromSpace');
 
     const { data: project } = useProject(projectUuid);
+
+    const { colorScheme } = useMantineColorScheme();
 
     const { mutate: promoteChart } = usePromoteMutation();
     const {
@@ -163,7 +165,6 @@ const SavedChartsHeader: FC = () => {
         useDisclosure();
 
     const { user, health } = useApp();
-    const { data: spaces = [] } = useSpaceSummaries(projectUuid, true);
     const { mutateAsync: contentAction, isLoading: isContentActionLoading } =
         useContentAction(projectUuid);
     const updateSavedChart = useUpdateMutation(
@@ -371,7 +372,11 @@ const SavedChartsHeader: FC = () => {
                                     dashboardName={savedChart.dashboardName}
                                 />
                                 <Title
-                                    c="dark.6"
+                                    c={
+                                        colorScheme === 'dark'
+                                            ? 'ldDark.0'
+                                            : 'ldDark.6'
+                                    }
                                     order={5}
                                     fw={600}
                                     truncate
@@ -382,7 +387,7 @@ const SavedChartsHeader: FC = () => {
                                 {isEditMode && userCanManageChart && (
                                     <ActionIcon
                                         size="xs"
-                                        color="gray.6"
+                                        color="ldGray.6"
                                         disabled={updateSavedChart.isLoading}
                                         onClick={() => setIsRenamingChart(true)}
                                     >
@@ -854,7 +859,6 @@ const SavedChartsHeader: FC = () => {
                               ]
                             : []),
                     ]}
-                    spaces={spaces}
                     isLoading={isMovingChart || isContentActionLoading}
                     onClose={transferToSpaceModalHandlers.close}
                     onConfirm={async (newSpaceUuid) => {

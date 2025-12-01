@@ -38,13 +38,15 @@ import {
     rehypeRemoveHeaderLinks,
     useMdEditorStyle,
 } from '../../../../../utils/markdownUtils';
-import { useUpdatePromptFeedbackMutation } from '../../hooks/useProjectAiAgents';
+import {
+    useRetryAiAgentThreadMessageMutation,
+    useUpdatePromptFeedbackMutation,
+} from '../../hooks/useProjectAiAgents';
 import { setArtifact } from '../../store/aiArtifactSlice';
 import {
     useAiAgentStoreDispatch,
     useAiAgentStoreSelector,
 } from '../../store/hooks';
-import { useAiAgentThreadStreamMutation } from '../../streaming/useAiAgentThreadStreamMutation';
 import {
     useAiAgentThreadMessageStreaming,
     useAiAgentThreadStreamQuery,
@@ -69,7 +71,7 @@ const AssistantBubbleContent: FC<{
         message.threadUuid,
         message.uuid,
     );
-    const { streamMessage } = useAiAgentThreadStreamMutation();
+    const { mutate: handleRetry } = useRetryAiAgentThreadMessageMutation();
     const mdStyle = useMdEditorStyle();
 
     const isPending = message.status === 'pending';
@@ -96,21 +98,6 @@ const AssistantBubbleContent: FC<{
 
     const messageContent = baseMessageContent + referencedArtifactsMarkdown;
 
-    const handleRetry = useCallback(() => {
-        void streamMessage({
-            projectUuid,
-            agentUuid,
-            threadUuid: message.threadUuid,
-            messageUuid: message.uuid,
-        });
-    }, [
-        streamMessage,
-        agentUuid,
-        message.threadUuid,
-        message.uuid,
-        projectUuid,
-    ]);
-
     const proposeChangeToolCall = isStreaming
         ? (streamingState?.toolCalls.find((t) => t.toolName === 'proposeChange')
               ?.toolArgs as ToolProposeChangeArgs)
@@ -133,7 +120,7 @@ const AssistantBubbleContent: FC<{
                     radius="md"
                     pr="md"
                     shadow="none"
-                    bg="gray.0"
+                    bg="ldGray.0"
                     style={{
                         borderStyle: 'dashed',
                     }}
@@ -147,7 +134,7 @@ const AssistantBubbleContent: FC<{
                                     size="md"
                                 />
                             }
-                            color="gray.0"
+                            color="ldGray.0"
                             variant="outline"
                         >
                             <Stack gap={4}>
@@ -163,15 +150,22 @@ const AssistantBubbleContent: FC<{
                         <Button
                             size="xs"
                             variant="default"
-                            color="dark.5"
+                            color="ldDark.5"
                             leftSection={
                                 <MantineIcon
                                     icon={IconRefresh}
                                     size="sm"
-                                    color="gray.7"
+                                    color="ldGray.7"
                                 />
                             }
-                            onClick={handleRetry}
+                            onClick={() =>
+                                handleRetry({
+                                    projectUuid,
+                                    agentUuid,
+                                    threadUuid: message.threadUuid,
+                                    messageUuid: message.uuid,
+                                })
+                            }
                         >
                             Try again
                         </Button>
@@ -347,7 +341,7 @@ export const AssistantBubble: FC<Props> = memo(
                 pos="relative"
                 w="100%"
                 gap="xs"
-                bg={isActive ? 'gray.0' : 'transparent'}
+                bg={isActive ? 'ldGray.0' : 'transparent'}
                 style={{
                     overflow: 'unset',
                     borderStartStartRadius: '0px',
@@ -417,7 +411,7 @@ export const AssistantBubble: FC<Props> = memo(
                                 <MantineIcon
                                     icon={IconMessageX}
                                     size={16}
-                                    color="gray.7"
+                                    color="ldGray.7"
                                 />
                                 <Text size="xs" c="dimmed" fw={600}>
                                     User feedback
@@ -529,7 +523,7 @@ export const AssistantBubble: FC<Props> = memo(
                                                 <Button
                                                     type="submit"
                                                     size="xs"
-                                                    color="dark.5"
+                                                    color="ldDark.5"
                                                 >
                                                     Submit
                                                 </Button>
@@ -584,6 +578,7 @@ export const AssistantBubble: FC<Props> = memo(
                     projectUuid={projectUuid}
                     artifacts={message.artifacts}
                     toolCalls={message.toolCalls}
+                    toolResults={message.toolResults}
                     isVisualizationAvailable={isArtifactAvailable}
                     isDrawerOpen={isDrawerOpen}
                     onClose={closeDrawer}

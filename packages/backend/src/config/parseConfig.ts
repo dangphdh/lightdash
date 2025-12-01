@@ -816,6 +816,7 @@ export type LightdashConfig = {
         };
     };
     // This is the override color palette for the organization
+    // TODO: allow override for dark theme
     appearance: {
         overrideColorPalette?: string[];
         overrideColorPaletteName?: string;
@@ -860,6 +861,10 @@ export type LightdashConfig = {
     };
     embedding: {
         enabled: boolean;
+        allowAll: {
+            dashboards: boolean;
+            charts: boolean;
+        };
         events?: {
             enabled: boolean;
             rateLimiting: {
@@ -1634,6 +1639,13 @@ export const parseConfig = (): LightdashConfig => {
         },
         embedding: {
             enabled: process.env.EMBEDDING_ENABLED === 'true',
+            allowAll: {
+                dashboards:
+                    process.env.EMBED_ALLOW_ALL_DASHBOARDS_BY_DEFAULT ===
+                    'true',
+                charts:
+                    process.env.EMBED_ALLOW_ALL_CHARTS_BY_DEFAULT === 'true',
+            },
             events: {
                 enabled: process.env.EMBED_EVENT_SYSTEM_ENABLED === 'true',
                 rateLimiting: {
