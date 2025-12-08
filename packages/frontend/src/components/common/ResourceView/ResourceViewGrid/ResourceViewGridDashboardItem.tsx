@@ -58,7 +58,7 @@ const ResourceViewGridDashboardItem: FC<ResourceViewGridDashboardItemProps> = ({
                     borderBottomStyle: 'solid',
                     borderBottomColor:
                         t.colorScheme === 'dark'
-                            ? t.colors.ldDark[8]
+                            ? t.colors.ldGray[1]
                             : t.colors.ldGray[3],
                 })}
             >

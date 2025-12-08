@@ -1,3 +1,4 @@
+import { colorsTuple } from '@mantine-8/core';
 import {
     rem,
     type ColorScheme,
@@ -8,30 +9,8 @@ import {
 type ColorTuple = Tuple<string, 10>;
 
 const lightModeColors = {
-    background: [
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-    ] as ColorTuple,
-    foreground: [
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-    ] as ColorTuple,
+    background: colorsTuple('#FEFEFE') as ColorTuple,
+    foreground: colorsTuple('#1A1B1E') as ColorTuple,
 
     ldDark: [
         '#C9C9C9',
@@ -61,56 +40,40 @@ const lightModeColors = {
 };
 
 const darkModeColors = {
-    background: [
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-        '#1A1B1E',
-    ] as ColorTuple,
-    foreground: [
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-        '#FEFEFE',
-    ] as ColorTuple,
+    background: colorsTuple('#1A1B1E') as ColorTuple,
+    foreground: colorsTuple('#FEFEFE') as ColorTuple,
 
     ldDark: [
-        '#f3f5ff',
-        '#d8e0e2',
-        '#c0c7c9',
-        '#a8aeb0',
-        '#909597',
-        '#787c7e',
-        '#606365',
-        '#484a4c',
-        '#303133',
-        '#18181a',
+        '#101113',
+        '#141517',
+        '#1A1B1E',
+        '#25262b',
+        '#2C2E33',
+        '#373A40',
+        '#5c5f66',
+        '#909296',
+        '#A6A7AB',
+        '#C1C2C5',
     ] as ColorTuple,
     ldGray: [
-        '#2e2e32',
-        '#414145',
-        '#545458',
-        '#67676b',
-        '#7a7a7e',
-        '#8d8d91',
-        '#a0a0a4',
-        '#b3b3b7',
-        '#c6c6ca',
-        '#d9d9df',
+        '#28282c',
+        '#343437',
+        '#404044',
+        '#4d4d4f',
+        '#59595c',
+        '#77777c',
+        '#858588',
+        '#949498',
+        '#a2a2a7',
+        '#b0b0bd',
     ] as ColorTuple,
 };
+
+// Colors used for conditional formatting in dark mode
+export const DARK_MODE_COLORS = {
+    SUBTLE_GRAY: darkModeColors.ldDark[4],
+    CONTRAST_GRAY: darkModeColors.ldDark[6],
+} as const;
 
 export const getMantineThemeOverride = (
     colorScheme: ColorScheme,
@@ -180,18 +143,19 @@ export const getMantineThemeOverride = (
                 variants: {
                     darkPrimary: (theme) => ({
                         root: {
-                            background: `var(--mantine-color-ldDark-9)`,
+                            background: `var(--mantine-color-foreground-0)`,
                             borderRadius: theme.radius.md,
-                            color: `var(--mantine-color-ldDark-0)`,
+                            color: `var(--mantine-color-ldGray-0)`,
+                            boxShadow: `inset 0 -2px 0 0 color-mix(in srgb, var(--mantine-color-ldDark-0) 40%, transparent)`, // glossy effect
                             ...theme.fn.hover({
-                                background: `var(--mantine-color-ldDark-8)`,
+                                background: `color-mix(in srgb, var(--mantine-color-foreground-0) 80%, transparent)`,
                             }),
                             '&[data-loading]': {
                                 boxShadow: theme.shadows.subtle,
                             },
                             '&[data-disabled]': {
                                 boxShadow: theme.shadows.subtle,
-                                color: `var(--mantine-color-ldDark-5)`,
+                                color: `color-mix(in srgb, var(--mantine-color-foreground-0) 50%, transparent)`,
                             },
                         },
                     }),
@@ -304,7 +268,10 @@ export const getMantineThemeOverride = (
             },
 
             'html, body': {
-                backgroundColor: theme.colors.ldGray[0],
+                backgroundColor:
+                    theme.colorScheme === 'dark'
+                        ? theme.colors.ldDark[1]
+                        : theme.colors.ldGray[0],
             },
 
             body: {
@@ -339,5 +306,12 @@ export const getMantineThemeOverride = (
                 from: { opacity: 0 },
                 to: { opacity: 1 },
             },
+            ...(theme.colorScheme === 'dark'
+                ? {
+                      '[class*="mantine-"][data-with-border]': {
+                          borderColor: theme.colors.ldDark[4],
+                      },
+                  }
+                : undefined),
         }),
     } satisfies MantineThemeOverride);

@@ -637,6 +637,37 @@ const parseAndSanitizeSchedulerTasks = (): Array<SchedulerTaskName> => {
     return ALL_TASK_NAMES;
 };
 
+const getBedrockConfig = () => {
+    if (process.env.BEDROCK_API_KEY) {
+        return {
+            apiKey: process.env.BEDROCK_API_KEY,
+            region: process.env.BEDROCK_REGION,
+            modelName:
+                process.env.BEDROCK_MODEL_NAME || DEFAULT_BEDROCK_MODEL_NAME,
+            embeddingModelName: process.env.BEDROCK_EMBEDDING_MODEL,
+            availableModels: getArrayFromCommaSeparatedList(
+                'BEDROCK_AVAILABLE_MODELS',
+            ),
+        } as const;
+    }
+    if (process.env.BEDROCK_ACCESS_KEY_ID) {
+        return {
+            accessKeyId: process.env.BEDROCK_ACCESS_KEY_ID,
+            secretAccessKey: process.env.BEDROCK_SECRET_ACCESS_KEY,
+            sessionToken: process.env.BEDROCK_SESSION_TOKEN,
+            region: process.env.BEDROCK_REGION,
+            modelName:
+                process.env.BEDROCK_MODEL_NAME || DEFAULT_BEDROCK_MODEL_NAME,
+            embeddingModelName: process.env.BEDROCK_EMBEDDING_MODEL,
+            availableModels: getArrayFromCommaSeparatedList(
+                'BEDROCK_AVAILABLE_MODELS',
+            ),
+        } as const;
+    }
+
+    return undefined;
+};
+
 export const getAiConfig = () => ({
     enabled: process.env.AI_COPILOT_ENABLED === 'true',
     debugLoggingEnabled:
@@ -656,9 +687,6 @@ export const getAiConfig = () => ({
                   apiKey: process.env.AZURE_AI_API_KEY,
                   apiVersion: process.env.AZURE_AI_API_VERSION,
                   deploymentName: process.env.AZURE_AI_DEPLOYMENT_NAME,
-                  temperature: getFloatFromEnvironmentVariable(
-                      'AZURE_AI_TEMPERATURE',
-                  ),
               }
             : undefined,
         openai: process.env.OPENAI_API_KEY
@@ -671,14 +699,9 @@ export const getAiConfig = () => ({
                       process.env.OPENAI_EMBEDDING_MODEL ||
                       DEFAULT_OPENAI_EMBEDDING_MODEL,
                   baseUrl: process.env.OPENAI_BASE_URL,
-                  temperature:
-                      getFloatFromEnvironmentVariable('OPENAI_TEMPERATURE'),
-                  responsesApi: process.env.OPENAI_RESPONSES_API === 'true',
-                  reasoning: {
-                      enabled: process.env.OPENAI_REASONING_ENABLED === 'true',
-                      reasoningSummary: process.env.OPENAI_REASONING_SUMMARY,
-                      reasoningEffort: process.env.OPENAI_REASONING_EFFORT,
-                  },
+                  availableModels: getArrayFromCommaSeparatedList(
+                      'OPENAI_AVAILABLE_MODELS',
+                  ),
               }
             : undefined,
         anthropic: process.env.ANTHROPIC_API_KEY
@@ -687,8 +710,8 @@ export const getAiConfig = () => ({
                   modelName:
                       process.env.ANTHROPIC_MODEL_NAME ||
                       DEFAULT_ANTHROPIC_MODEL_NAME,
-                  temperature: getFloatFromEnvironmentVariable(
-                      'ANTHROPIC_TEMPERATURE',
+                  availableModels: getArrayFromCommaSeparatedList(
+                      'ANTHROPIC_AVAILABLE_MODELS',
                   ),
               }
             : undefined,
@@ -702,28 +725,9 @@ export const getAiConfig = () => ({
                   allowedProviders: getArrayFromCommaSeparatedList(
                       'OPENROUTER_ALLOWED_PROVIDERS',
                   ),
-                  temperature: getFloatFromEnvironmentVariable(
-                      'OPENROUTER_TEMPERATURE',
-                  ),
               }
             : undefined,
-        bedrock:
-            process.env.BEDROCK_API_KEY || process.env.BEDROCK_ACCESS_KEY_ID
-                ? {
-                      apiKey: process.env.BEDROCK_API_KEY,
-                      region: process.env.BEDROCK_REGION,
-                      accessKeyId: process.env.BEDROCK_ACCESS_KEY_ID,
-                      secretAccessKey: process.env.BEDROCK_SECRET_ACCESS_KEY,
-                      sessionToken: process.env.BEDROCK_SESSION_TOKEN,
-                      modelName:
-                          process.env.BEDROCK_MODEL_NAME ||
-                          DEFAULT_BEDROCK_MODEL_NAME,
-                      embeddingModelName: process.env.BEDROCK_EMBEDDING_MODEL,
-                      temperature: getFloatFromEnvironmentVariable(
-                          'BEDROCK_TEMPERATURE',
-                      ),
-                  }
-                : undefined,
+        bedrock: getBedrockConfig(),
     },
     maxQueryLimit:
         getIntegerFromEnvironmentVariable('AI_COPILOT_MAX_QUERY_LIMIT') ||
@@ -982,6 +986,7 @@ export type SlackConfig = {
     socketMode?: boolean;
     channelsCachedTime: number;
     supportUrl: string;
+    multiAgentChannelEnabled: boolean;
 };
 export type HeadlessBrowserConfig = {
     host?: string;
@@ -1553,6 +1558,8 @@ export const parseConfig = (): LightdashConfig => {
                 10,
             ), // 10 minutes
             supportUrl: process.env.SLACK_SUPPORT_URL || '',
+            multiAgentChannelEnabled:
+                process.env.SLACK_MULTI_AGENT_CHANNEL_ENABLED === 'true',
         },
         scheduler: {
             enabled: process.env.SCHEDULER_ENABLED !== 'false',

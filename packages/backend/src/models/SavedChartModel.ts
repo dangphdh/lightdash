@@ -1049,8 +1049,6 @@ export class SavedChartModel {
                     return ECHARTS_DEFAULT_COLORS;
                 };
 
-                console.log('savedQuery', JSON.stringify(savedQuery, null, 2));
-
                 return {
                     uuid: savedQuery.saved_query_uuid,
                     projectUuid: savedQuery.project_uuid,
@@ -1464,7 +1462,10 @@ export class SavedChartModel {
                                                 ),
                                         );
                                 });
-                        });
+                        })
+                        // Deduplicate results since dashboard_versions JOIN can produce
+                        // multiple rows when a chart appears in multiple dashboard versions
+                        .distinctOn('saved_queries.saved_query_uuid');
                 }
 
                 if (filters.spaceUuids) {

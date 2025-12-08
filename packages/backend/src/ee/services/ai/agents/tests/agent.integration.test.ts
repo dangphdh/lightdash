@@ -7,8 +7,9 @@ import {
     getTestContext,
     IntegrationTestContext,
 } from '../../../../../vitest.setup.integration';
-import { getModel } from '../../models';
+import { getModel, MODEL_PRESETS } from '../../models';
 import { getOpenaiGptmodel } from '../../models/openai-gpt';
+import { getModelPreset } from '../../models/presets';
 import {
     calculateRunQueryEfficiencyScore,
     llmAsAJudge,
@@ -40,18 +41,14 @@ describeOrSkip.concurrent('agent integration tests', () => {
     };
 
     // Creating model to be used as judge
-    const { model: judge, callOptions } = getOpenaiGptmodel({
-        apiKey: process.env.OPENAI_API_KEY!,
-        modelName: 'gpt-4.1-2025-04-14',
-        embeddingModelName: 'text-embedding-3-small',
-        temperature: 0.2,
-        responsesApi: true,
-        reasoning: {
-            enabled: false,
-            reasoningEffort: 'medium',
-            reasoningSummary: 'auto',
+    const { model: judge, callOptions } = getOpenaiGptmodel(
+        {
+            apiKey: process.env.OPENAI_API_KEY!,
+            modelName: 'gpt-4.1',
+            embeddingModelName: 'text-embedding-3-small',
         },
-    });
+        getModelPreset('openai', 'gpt-4.1')!,
+    );
 
     beforeAll(async () => {
         if (!process.env.OPENAI_API_KEY) {
@@ -60,6 +57,8 @@ describeOrSkip.concurrent('agent integration tests', () => {
 
         context = getTestContext();
         const services = getServices(context.app);
+
+        const enableReasoning = process.env.OPENAI_REASONING_ENABLED === 'true';
 
         // Create specialized agent with tags
         const specialized = await services.aiAgentService.createAgent(
@@ -77,7 +76,7 @@ describeOrSkip.concurrent('agent integration tests', () => {
                 imageUrl: null,
                 enableDataAccess: true,
                 enableSelfImprovement: false,
-                enableReasoning: false,
+                enableReasoning,
                 version: 2,
             },
         );
@@ -98,7 +97,7 @@ describeOrSkip.concurrent('agent integration tests', () => {
                 imageUrl: null,
                 enableDataAccess: true,
                 enableSelfImprovement: false,
-                enableReasoning: false,
+                enableReasoning,
                 version: 2,
                 description: null,
             },

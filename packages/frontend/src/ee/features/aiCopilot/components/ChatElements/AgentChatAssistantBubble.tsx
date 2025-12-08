@@ -56,6 +56,7 @@ import AgentChatDebugDrawer from './AgentChatDebugDrawer';
 import { AiArtifactInline } from './AiArtifactInline';
 import { AiArtifactButton } from './ArtifactButton/AiArtifactButton';
 import { ContentLink } from './ContentLink';
+import { MessageModelIndicator } from './MessageModelIndicator';
 import { rehypeAiAgentContentLinks } from './rehypeContentLinks';
 import { AiChartToolCalls } from './ToolCalls/AiChartToolCalls';
 import { AiProposeChangeToolCall } from './ToolCalls/AiProposeChangeToolCall';
@@ -429,7 +430,7 @@ export const AssistantBubble: FC<Props> = memo(
                             {({ copied, copy }) => (
                                 <ActionIcon
                                     variant="subtle"
-                                    color="gray"
+                                    color="ldGray.9"
                                     aria-label="copy"
                                     onClick={copy}
                                 >
@@ -443,7 +444,7 @@ export const AssistantBubble: FC<Props> = memo(
                         {(!hasRating || upVoted) && (
                             <ActionIcon
                                 variant="subtle"
-                                color="gray"
+                                color="ldGray.9"
                                 aria-label="upvote"
                                 onClick={handleUpvote}
                             >
@@ -481,7 +482,7 @@ export const AssistantBubble: FC<Props> = memo(
                                 <Popover.Target>
                                     <ActionIcon
                                         variant="subtle"
-                                        color="gray"
+                                        color="ldGray.9"
                                         aria-label="downvote"
                                         onClick={handleDownvote}
                                     >
@@ -548,14 +549,11 @@ export const AssistantBubble: FC<Props> = memo(
                             <Tooltip label="Add this response to evals">
                                 <ActionIcon
                                     variant="subtle"
-                                    color="gray"
+                                    color="ldGray.9"
                                     aria-label="Add to evaluation set"
                                     onClick={() => onAddToEvals(message.uuid)}
                                 >
-                                    <MantineIcon
-                                        icon={IconTestPipe}
-                                        color="gray"
-                                    />
+                                    <MantineIcon icon={IconTestPipe} />
                                 </ActionIcon>
                             </Tooltip>
                         )}
@@ -563,13 +561,19 @@ export const AssistantBubble: FC<Props> = memo(
                         {isArtifactAvailable && (
                             <ActionIcon
                                 variant="subtle"
-                                color="gray"
+                                color="ldGray.9"
                                 aria-label="Debug information"
                                 onClick={openDrawer}
                             >
-                                <MantineIcon icon={IconBug} color="gray" />
+                                <MantineIcon icon={IconBug} />
                             </ActionIcon>
                         )}
+
+                        <MessageModelIndicator
+                            projectUuid={projectUuid}
+                            agentUuid={agentUuid}
+                            modelConfig={message.modelConfig}
+                        />
                     </Group>
                 )}
 

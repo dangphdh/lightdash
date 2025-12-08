@@ -255,7 +255,7 @@ function flattenTable(
             estimatedHeight: ITEM_HEIGHTS.SECTION_HEADER,
             data: {
                 tableName,
-                treeSection: TreeSection.Dimensions, // Arbitrary, missing fields aren't tied to a section
+                treeSection: TreeSection.MissingFields, // Arbitrary, missing fields aren't tied to a section
                 label: 'Missing fields',
                 color: 'ldGray.6',
                 depth: baseDepth,
@@ -270,7 +270,7 @@ function flattenTable(
                 data: {
                     fieldId,
                     tableName,
-                    isDimension: true, // Will be determined by the component
+                    isDimension: options.selectedDimensions.includes(fieldId),
                 },
             } satisfies MissingFieldItem);
         });
@@ -565,7 +565,11 @@ export function getNodeMapsForVirtualization(
         if (Object.keys(dimensionsMap).length > 0) {
             maps.set(
                 `${tableName}-dimensions`,
-                getNodeMapFromItemsMap(dimensionsMap, table.groupDetails),
+                getNodeMapFromItemsMap(
+                    dimensionsMap,
+                    table.groupDetails,
+                    table.orderFieldsBy,
+                ),
             );
         }
 
@@ -576,7 +580,11 @@ export function getNodeMapsForVirtualization(
         if (Object.keys(metricsMap).length > 0) {
             maps.set(
                 `${tableName}-metrics`,
-                getNodeMapFromItemsMap(metricsMap, table.groupDetails),
+                getNodeMapFromItemsMap(
+                    metricsMap,
+                    table.groupDetails,
+                    table.orderFieldsBy,
+                ),
             );
         }
 
@@ -590,7 +598,11 @@ export function getNodeMapsForVirtualization(
             );
             maps.set(
                 `${tableName}-custom-metrics`,
-                getNodeMapFromItemsMap(customMetricsMap, table.groupDetails),
+                getNodeMapFromItemsMap(
+                    customMetricsMap,
+                    table.groupDetails,
+                    table.orderFieldsBy,
+                ),
             );
         }
 
@@ -603,7 +615,11 @@ export function getNodeMapsForVirtualization(
             );
             maps.set(
                 `${tableName}-custom-dimensions`,
-                getNodeMapFromItemsMap(customDimensionsMap, table.groupDetails),
+                getNodeMapFromItemsMap(
+                    customDimensionsMap,
+                    table.groupDetails,
+                    table.orderFieldsBy,
+                ),
             );
         }
     });

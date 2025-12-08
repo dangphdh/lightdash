@@ -21,6 +21,7 @@ import {
     type ParameterValue,
     type PeriodOverPeriodComparison,
     type ReplaceCustomFields,
+    type ResultColumns,
     type SavedChart,
     type SortField,
     type TableCalculation,
@@ -44,7 +45,7 @@ import {
     getValidChartConfig,
 } from '../../../providers/Explorer/utils';
 
-import { calcColumnOrder } from './utils';
+import { calcColumnOrder, computeColumnOrderWithPoP } from './utils';
 
 export type ExplorerSliceState = ExplorerReduceState;
 
@@ -252,7 +253,31 @@ const explorerSlice = createSlice({
         },
 
         setColumnOrder: (state, action: PayloadAction<string[]>) => {
-            state.unsavedChartVersion.tableConfig.columnOrder = action.payload;
+            // Identify PoP fields by comparing with existing completeColumnOrder
+            // PoP fields are those in completeColumnOrder but not in base columnOrder
+            const currentBaseOrder =
+                state.unsavedChartVersion.tableConfig.columnOrder;
+            const currentCompleteOrder =
+                state.queryExecution.completeColumnOrder;
+
+            // Build set of PoP fields
+            const baseFieldsSet = new Set(currentBaseOrder);
+            const popFields = new Set(
+                currentCompleteOrder.filter(
+                    (field) => !baseFieldsSet.has(field),
+                ),
+            );
+
+            // Filter out PoP fields from the incoming order to get base order
+            const baseOrder = action.payload.filter(
+                (field) => !popFields.has(field),
+            );
+
+            // Update base order
+            state.unsavedChartVersion.tableConfig.columnOrder = baseOrder;
+
+            // Also update completeColumnOrder to match the user's drag immediately
+            state.queryExecution.completeColumnOrder = action.payload;
         },
 
         setPivotConfig: (
@@ -774,6 +799,12 @@ const explorerSlice = createSlice({
             state.unsavedChartVersion.metricQuery.filters = newFilters;
 
             // Update tableCalculations SQL references
+            const tableCalcNames = new Set(
+                state.unsavedChartVersion.metricQuery.tableCalculations.map(
+                    (tc) => tc.name,
+                ),
+            );
+
             state.unsavedChartVersion.metricQuery.tableCalculations =
                 state.unsavedChartVersion.metricQuery.tableCalculations.map(
                     (tableCalculation) => {
@@ -784,6 +815,11 @@ const explorerSlice = createSlice({
                         const newSql = tableCalculation.sql.replace(
                             lightdashVariablePattern,
                             (_, fieldRef) => {
+                                // Skip table calculation references - they're valid without table prefix
+                                if (tableCalcNames.has(fieldRef)) {
+                                    return `\${${fieldRef}}`;
+                                }
+
                                 const fieldId =
                                     convertFieldRefToFieldId(fieldRef);
                                 if (fieldId === previousAdditionalMetricName) {
@@ -867,7 +903,19 @@ const explorerSlice = createSlice({
                 queryUuidHistory: [],
                 unpivotedQueryUuidHistory: [],
                 pendingFetch: false,
+                completeColumnOrder: [],
             };
+        },
+
+        setCompleteColumnOrder: (
+            state,
+            action: PayloadAction<ResultColumns>,
+        ) => {
+            const { completeColumnOrder } = computeColumnOrderWithPoP(
+                state.unsavedChartVersion.tableConfig.columnOrder,
+                action.payload,
+            );
+            state.queryExecution.completeColumnOrder = completeColumnOrder;
         },
 
         // Request a query execution (works regardless of auto-fetch setting)

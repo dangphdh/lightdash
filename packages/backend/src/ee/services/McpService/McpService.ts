@@ -27,6 +27,7 @@ import {
     toolRunMetricQueryArgsSchema,
     ToolSearchFieldValuesArgs,
     toolSearchFieldValuesArgsSchema,
+    UserAttributeValueMap,
 } from '@lightdash/common';
 import * as Sentry from '@sentry/node';
 // eslint-disable-next-line import/extensions
@@ -52,6 +53,8 @@ import { SpaceService } from '../../../services/SpaceService/SpaceService';
 import {
     doesExploreMatchRequiredAttributes,
     getFilteredExplore,
+    mergeUserAttributes,
+    validateUserAttributeOverrides,
 } from '../../../services/UserAttributesService/UserAttributeUtils';
 import { wrapSentryTransaction } from '../../../utils';
 import { VERSION } from '../../../version';
@@ -100,6 +103,8 @@ type McpServiceArguments = {
 export type ExtraContext = {
     user: SessionUser;
     account: OauthAccount | ApiKeyAccount;
+    /** User attribute overrides passed via X-Lightdash-User-Attributes header */
+    headerUserAttributes?: UserAttributeValueMap;
 };
 type McpProtocolContext = {
     authInfo?: AuthInfo & {
@@ -252,11 +257,17 @@ export class McpService extends BaseService {
                         context as McpProtocolContext,
                     );
 
+                    const userAttributeOverrides =
+                        await this.getUserAttributeOverridesFromContext(
+                            context as McpProtocolContext,
+                        );
+
                     const listExplores = async () =>
                         this.getAvailableExplores(
                             user,
                             projectUuid,
                             tagsFromContext,
+                            userAttributeOverrides,
                         );
 
                     const mcpListExploresTool = getMcpListExplores({
@@ -294,7 +305,7 @@ export class McpService extends BaseService {
             {
                 description: toolFindExploresArgsSchemaV3.description,
                 inputSchema: this.getMcpCompatibleSchema(
-                    toolFindExploresArgsSchemaV3.omit({ type: true }),
+                    toolFindExploresArgsSchemaV3,
                 ) as AnyType,
             },
             async (_args, context) => {
@@ -322,10 +333,15 @@ export class McpService extends BaseService {
                 const tagsFromContext = await this.getTagsFromContext(
                     context as McpProtocolContext,
                 );
+                const userAttributeOverrides =
+                    await this.getUserAttributeOverridesFromContext(
+                        context as McpProtocolContext,
+                    );
                 const availableExplores = await this.getAvailableExplores(
                     user,
                     argsWithProject.projectUuid,
                     tagsFromContext,
+                    userAttributeOverrides,
                 );
 
                 const findExploresTool = getFindExplores({
@@ -335,7 +351,6 @@ export class McpService extends BaseService {
                 });
                 const result = await findExploresTool.execute!(
                     {
-                        type: 'find_explores_v3',
                         ...argsWithProject,
                         searchQuery: args.searchQuery,
                     },
@@ -362,7 +377,7 @@ export class McpService extends BaseService {
             {
                 description: toolFindFieldsArgsSchema.description,
                 inputSchema: this.getMcpCompatibleSchema(
-                    toolFindFieldsArgsSchema.omit({ type: true }),
+                    toolFindFieldsArgsSchema,
                 ) as AnyType,
             },
             async (_args, context) => {
@@ -390,16 +405,10 @@ export class McpService extends BaseService {
                     updateProgress: async () => {}, // No-op for MCP context
                     pageSize: 15,
                 });
-                const result = await findFieldsTool.execute!(
-                    {
-                        type: 'find_fields',
-                        ...argsWithProject,
-                    },
-                    {
-                        toolCallId: '',
-                        messages: [],
-                    },
-                );
+                const result = await findFieldsTool.execute!(argsWithProject, {
+                    toolCallId: '',
+                    messages: [],
+                });
 
                 return {
                     content: [
@@ -417,7 +426,7 @@ export class McpService extends BaseService {
             {
                 description: toolFindContentArgsSchema.description,
                 inputSchema: this.getMcpCompatibleSchema(
-                    toolFindContentArgsSchema.omit({ type: true }),
+                    toolFindContentArgsSchema,
                 ),
             },
             async (_args, context) => {
@@ -444,16 +453,10 @@ export class McpService extends BaseService {
                     findContent,
                     siteUrl: this.lightdashConfig.siteUrl,
                 });
-                const result = await findContentTool.execute!(
-                    {
-                        type: 'find_content',
-                        ...argsWithProject,
-                    },
-                    {
-                        toolCallId: '',
-                        messages: [],
-                    },
-                );
+                const result = await findContentTool.execute!(argsWithProject, {
+                    toolCallId: '',
+                    messages: [],
+                });
 
                 return {
                     content: [
@@ -555,6 +558,12 @@ export class McpService extends BaseService {
                     tagsToSet = args.tags.length > 0 ? args.tags : null;
                 }
 
+                // Get existing context to preserve user attribute overrides
+                const existingContext = await this.mcpContextModel.getContext(
+                    user.userUuid,
+                    organizationUuid,
+                );
+
                 // Set context
                 await this.mcpContextModel.setContext({
                     userUuid: user.userUuid,
@@ -647,7 +656,7 @@ export class McpService extends BaseService {
             {
                 description: toolRunMetricQueryArgsSchema.description,
                 inputSchema: this.getMcpCompatibleSchema(
-                    toolRunMetricQueryArgsSchema.omit({ type: true }),
+                    toolRunMetricQueryArgsSchema,
                 ) as AnyType,
             },
             async (_args, context) => {
@@ -676,10 +685,7 @@ export class McpService extends BaseService {
                 });
 
                 const result = await runMetricQueryTool.execute!(
-                    {
-                        type: 'run_metric_query',
-                        ...argsWithProject,
-                    },
+                    argsWithProject,
                     {
                         toolCallId: '',
                         messages: [],
@@ -703,7 +709,7 @@ export class McpService extends BaseService {
             {
                 description: toolSearchFieldValuesArgsSchema.description,
                 inputSchema: this.getMcpCompatibleSchema(
-                    toolSearchFieldValuesArgsSchema.omit({ type: true }),
+                    toolSearchFieldValuesArgsSchema,
                 ) as AnyType,
             },
             async (_args, context) => {
@@ -730,10 +736,7 @@ export class McpService extends BaseService {
                     searchFieldValues,
                 });
                 const result = await searchFieldValuesTool.execute!(
-                    {
-                        type: 'search_field_values',
-                        ...argsWithProject,
-                    },
+                    argsWithProject,
                     {
                         toolCallId: '',
                         messages: [],
@@ -788,6 +791,64 @@ export class McpService extends BaseService {
         return contextRow?.context.tags || null;
     }
 
+    async getMergedUserAttributes(
+        context: McpProtocolContext,
+    ): Promise<UserAttributeValueMap> {
+        const { user, headerUserAttributes } = context.authInfo!.extra;
+        const { organizationUuid } = user;
+
+        if (!user || !organizationUuid) {
+            return {};
+        }
+
+        // Get database defaults
+        const dbAttributes =
+            await this.userAttributesModel.getAttributeValuesForOrgMember({
+                organizationUuid,
+                userUuid: user.userUuid,
+            });
+
+        // Validate header attributes if present (admin + narrowing check)
+        if (headerUserAttributes) {
+            validateUserAttributeOverrides(
+                user,
+                headerUserAttributes,
+                dbAttributes,
+            );
+        }
+
+        return mergeUserAttributes(dbAttributes, headerUserAttributes);
+    }
+
+    async getUserAttributeOverridesFromContext(
+        context: McpProtocolContext,
+    ): Promise<UserAttributeValueMap | undefined> {
+        const { user, headerUserAttributes } = context.authInfo!.extra;
+        const { organizationUuid } = user;
+
+        if (!user || !organizationUuid) {
+            return undefined;
+        }
+
+        if (!headerUserAttributes) {
+            return undefined;
+        }
+
+        // Validate header attributes (admin + narrowing check)
+        const dbAttributes =
+            await this.userAttributesModel.getAttributeValuesForOrgMember({
+                organizationUuid,
+                userUuid: user.userUuid,
+            });
+        validateUserAttributeOverrides(
+            user,
+            headerUserAttributes,
+            dbAttributes,
+        );
+
+        return headerUserAttributes;
+    }
+
     async resolveProjectUuid(context: McpProtocolContext): Promise<string> {
         // Use projectUuid from args or get from context
         const projectUuid = await this.getProjectUuidFromContext(context);
@@ -803,6 +864,7 @@ export class McpService extends BaseService {
         user: SessionUser,
         projectUuid: string,
         availableTags: string[] | null,
+        userAttributeOverrides?: UserAttributeValueMap,
     ) {
         return wrapSentryTransaction(
             'AiAgent.getAvailableExplores',
@@ -816,10 +878,15 @@ export class McpService extends BaseService {
                     throw new ForbiddenError('Organization not found');
                 }
 
-                const userAttributes =
+                const dbAttributes =
                     await this.userAttributesModel.getAttributeValuesForOrgMember(
                         { organizationUuid, userUuid: user.userUuid },
                     );
+
+                const userAttributes = mergeUserAttributes(
+                    dbAttributes,
+                    userAttributeOverrides,
+                );
 
                 const allExplores = Object.values(
                     await this.projectModel.findExploresFromCache(
@@ -856,11 +923,13 @@ export class McpService extends BaseService {
         projectUuid: string,
         availableTags: string[] | null,
         exploreName: string,
+        userAttributeOverrides?: UserAttributeValueMap,
     ) {
         const explores = await this.getAvailableExplores(
             user,
             projectUuid,
             availableTags,
+            userAttributeOverrides,
         );
 
         const explore = explores.find((e) => e.name === exploreName);
@@ -906,16 +975,11 @@ export class McpService extends BaseService {
         // Get tags from context for filtering
         const tagsFromContext = await this.getTagsFromContext(context);
 
+        // Get merged user attributes (DB + session overrides)
+        const userAttributes = await this.getMergedUserAttributes(context);
+
         const findExplores: FindExploresFn = (args) =>
             wrapSentryTransaction('McpService.findExplores', args, async () => {
-                const userAttributes =
-                    await this.userAttributesModel.getAttributeValuesForOrgMember(
-                        {
-                            organizationUuid,
-                            userUuid: user.userUuid,
-                        },
-                    );
-
                 const searchResults = await this.catalogService.searchCatalog({
                     projectUuid,
                     userAttributes,
@@ -1012,21 +1076,19 @@ export class McpService extends BaseService {
         // Get tags from context for filtering
         const tagsFromContext = await this.getTagsFromContext(context);
 
+        // Get merged user attributes (DB + session overrides)
+        const userAttributes = await this.getMergedUserAttributes(context);
+        const userAttributeOverrides =
+            await this.getUserAttributeOverridesFromContext(context);
+
         const findFields: FindFieldFn = (args) =>
             wrapSentryTransaction('McpService.findFields', args, async () => {
-                const userAttributes =
-                    await this.userAttributesModel.getAttributeValuesForOrgMember(
-                        {
-                            organizationUuid,
-                            userUuid: user.userUuid,
-                        },
-                    );
-
                 const explore = await this.getExplore(
                     user,
                     projectUuid,
                     tagsFromContext,
                     args.table,
+                    userAttributeOverrides,
                 );
 
                 const { data: catalogItems, pagination } =
@@ -1157,10 +1219,13 @@ export class McpService extends BaseService {
 
         // Get tags from context and fetch available explores
         const tagsFromContext = await this.getTagsFromContext(context);
+        const userAttributeOverrides =
+            await this.getUserAttributeOverridesFromContext(context);
         const explores = await this.getAvailableExplores(
             user,
             projectUuid,
             tagsFromContext,
+            userAttributeOverrides,
         );
         const agentContext = new AgentContext(explores);
 
@@ -1185,6 +1250,7 @@ export class McpService extends BaseService {
                     user_uuid: user.userUuid,
                     organization_uuid: organizationUuid,
                 },
+                userAttributeOverrides,
             });
 
         return { agentContext, runMiniMetricQuery };
@@ -1221,6 +1287,10 @@ export class McpService extends BaseService {
             throw new ForbiddenError();
         }
 
+        // Get user attribute overrides for row-level security
+        const userAttributeOverrides =
+            await this.getUserAttributeOverridesFromContext(context);
+
         const searchFieldValues: SearchFieldValuesFn = (args) =>
             wrapSentryTransaction(
                 'McpService.searchFieldValues',
@@ -1243,6 +1313,7 @@ export class McpService extends BaseService {
                             andFilters,
                             false,
                             undefined,
+                            userAttributeOverrides,
                         );
                     return results;
                 },

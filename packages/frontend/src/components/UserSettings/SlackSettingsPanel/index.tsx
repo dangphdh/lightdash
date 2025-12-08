@@ -13,7 +13,6 @@ import {
     Flex,
     Group,
     Loader,
-    Select,
     Stack,
     Switch,
     Text,
@@ -27,27 +26,27 @@ import {
     IconDeviceFloppy,
     IconHelpCircle,
     IconRefresh,
-    IconSparkles,
     IconTrash,
 } from '@tabler/icons-react';
-import debounce from 'lodash/debounce';
-import { useEffect, useMemo, useState, type FC } from 'react';
+import { useEffect, type FC } from 'react';
 import { Link } from 'react-router';
 import { z } from 'zod';
+import useHealth from '../../../hooks/health/useHealth';
 import {
     useDeleteSlack,
     useGetSlack,
-    useSlackChannels,
     useUpdateSlackAppCustomSettingsMutation,
 } from '../../../hooks/slack/useSlack';
 import { useActiveProjectUuid } from '../../../hooks/useActiveProject';
 import { useFeatureFlag } from '../../../hooks/useFeatureFlagEnabled';
 import slackSvg from '../../../svgs/slack.svg';
+import { BetaBadge } from '../../common/BetaBadge';
+import { ComingSoonBadge } from '../../common/ComingSoonBadge';
 import { default as MantineIcon } from '../../common/MantineIcon';
 import { SettingsGridCard } from '../../common/Settings/SettingsCard';
+import { SlackChannelSelect } from '../../common/SlackChannelSelect';
 
 const SLACK_INSTALL_URL = `/api/v1/slack/install/`;
-const MAX_SLACK_CHANNELS = 100000;
 
 const formSchema = z.object({
     notificationChannel: z.string().min(1).nullable(),
@@ -75,23 +74,12 @@ const SlackSettingsPanel: FC = () => {
     const { data: aiCopilotFlag } = useFeatureFlag(
         CommercialFeatureFlags.AiCopilot,
     );
+    const { data: health } = useHealth();
     const { data: slackInstallation, isInitialLoading } = useGetSlack();
     const organizationHasSlack = !!slackInstallation?.organizationUuid;
 
-    const [search, setSearch] = useState('');
-
-    const debounceSetSearch = debounce((val) => setSearch(val), 1500);
-
-    const { data: slackChannels, isInitialLoading: isLoadingSlackChannels } =
-        useSlackChannels(
-            search,
-            {
-                excludeArchived: true,
-                excludeDms: true,
-                excludeGroups: true,
-            },
-            { enabled: organizationHasSlack },
-        );
+    const isSlackMultiAgentChannelEnabled =
+        health?.slack?.multiAgentChannelEnabled ?? false;
 
     const { mutate: deleteSlack } = useDeleteSlack();
     const { mutate: updateCustomSettings } =
@@ -135,19 +123,7 @@ const SlackSettingsPanel: FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [slackInstallation]);
 
-    const slackChannelOptions = useMemo(() => {
-        return (
-            slackChannels?.map((channel) => ({
-                value: channel.id,
-                label: channel.name,
-            })) ?? []
-        );
-    }, [slackChannels]);
-
-    let responsiveChannelsSearchEnabled =
-        slackChannelOptions.length >= MAX_SLACK_CHANNELS || search.length > 0; // enable responvive channels search if there are more than MAX_SLACK_CHANNELS defined channels
-
-    if (isInitialLoading) {
+    if (isInitialLoading || (organizationHasSlack && !form.initialized)) {
         return <Loader />;
     }
 
@@ -199,7 +175,7 @@ const SlackSettingsPanel: FC = () => {
                 {organizationHasSlack ? (
                     <form onSubmit={handleSubmit}>
                         <Stack spacing="sm">
-                            <Select
+                            <SlackChannelSelect
                                 label={
                                     <Group spacing="two" mb="two">
                                         <Text>
@@ -217,31 +193,14 @@ const SlackSettingsPanel: FC = () => {
                                         </Tooltip>
                                     </Group>
                                 }
-                                size="xs"
-                                rightSection={
-                                    isLoadingSlackChannels ? (
-                                        <Loader size="xs" />
-                                    ) : null
-                                }
-                                placeholder={
-                                    isLoadingSlackChannels
-                                        ? 'Loading channels, this might take a while.'
-                                        : 'Select a channel'
-                                }
-                                searchable
-                                clearable
-                                limit={500}
-                                nothingFound="No channels found"
-                                data={slackChannelOptions}
-                                {...form.getInputProps('notificationChannel')}
-                                onSearchChange={(val) => {
-                                    if (responsiveChannelsSearchEnabled) {
-                                        debounceSetSearch(val);
-                                    }
-                                }}
+                                value={form.values.notificationChannel}
                                 onChange={(value) => {
-                                    setFieldValue('notificationChannel', value);
+                                    setFieldValue(
+                                        'notificationChannel',
+                                        value ?? null,
+                                    );
                                 }}
+                                placeholder="Select a channel"
                             />
                             <Title order={6} fw={500}>
                                 Slack bot avatar
@@ -350,32 +309,28 @@ const SlackSettingsPanel: FC = () => {
                                     </Stack>
 
                                     <Stack spacing="xs">
-                                        <Group spacing="two">
+                                        <Group spacing="xs">
                                             <Title order={6} fw={500}>
                                                 Multi-agent channel
                                             </Title>
 
-                                            <Tooltip
-                                                multiline
-                                                variant="xs"
-                                                maw={250}
-                                                label="Select a channel where users can interact with any AI agent (excluding from preview projects). When users start a thread in this channel, they'll see a dropdown to select which agent to use."
-                                            >
-                                                <MantineIcon
-                                                    icon={IconHelpCircle}
-                                                />
-                                            </Tooltip>
-                                            <Badge
-                                                color="indigo"
-                                                variant="light"
-                                                icon={
+                                            {isSlackMultiAgentChannelEnabled && (
+                                                <Tooltip
+                                                    multiline
+                                                    variant="xs"
+                                                    maw={250}
+                                                    label="Select a channel where users can interact with any AI agent (excluding from preview projects). When users start a thread in this channel, they'll see a dropdown to select which agent to use."
+                                                >
                                                     <MantineIcon
-                                                        icon={IconSparkles}
+                                                        icon={IconHelpCircle}
                                                     />
-                                                }
-                                            >
-                                                Coming soon
-                                            </Badge>
+                                                </Tooltip>
+                                            )}
+                                            {isSlackMultiAgentChannelEnabled ? (
+                                                <BetaBadge />
+                                            ) : (
+                                                <ComingSoonBadge />
+                                            )}
                                         </Group>
 
                                         <Text c="dimmed" fz="xs">
@@ -384,36 +339,26 @@ const SlackSettingsPanel: FC = () => {
                                             which AI agent to chat with.
                                         </Text>
 
-                                        <Select
-                                            size="xs"
-                                            placeholder="Select a channel (optional)"
-                                            searchable
-                                            clearable
-                                            limit={500}
-                                            disabled
-                                            nothingFound="No channels found"
-                                            data={slackChannelOptions}
-                                            rightSection={
-                                                isLoadingSlackChannels ? (
-                                                    <Loader size="xs" />
-                                                ) : null
+                                        <SlackChannelSelect
+                                            value={
+                                                form.values
+                                                    .aiMultiAgentChannelId ??
+                                                null
                                             }
-                                            {...form.getInputProps(
-                                                'aiMultiAgentChannelId',
-                                            )}
-                                            onSearchChange={(val) => {
-                                                if (
-                                                    responsiveChannelsSearchEnabled
-                                                ) {
-                                                    debounceSetSearch(val);
-                                                }
-                                            }}
                                             onChange={(value) => {
                                                 setFieldValue(
                                                     'aiMultiAgentChannelId',
                                                     value ?? undefined,
                                                 );
                                             }}
+                                            disabled={
+                                                !isSlackMultiAgentChannelEnabled
+                                            }
+                                            placeholder={
+                                                isSlackMultiAgentChannelEnabled
+                                                    ? 'Select a channel (optional)'
+                                                    : 'Feature not available'
+                                            }
                                         />
                                     </Stack>
                                 </Stack>
