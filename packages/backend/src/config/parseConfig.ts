@@ -72,7 +72,7 @@ export const getIntegerFromEnvironmentVariable = (
     name: string,
 ): number | undefined => {
     const raw = process.env[name];
-    if (raw === undefined) {
+    if (!raw) {
         return undefined;
     }
     const parsed = Number.parseInt(raw, 10);
@@ -88,7 +88,7 @@ export const getFloatFromEnvironmentVariable = (
     name: string,
 ): number | undefined => {
     const raw = process.env[name];
-    if (raw === undefined) {
+    if (!raw) {
         return undefined;
     }
     const parsed = Number.parseFloat(raw);
@@ -679,7 +679,9 @@ export const getAiConfig = () => ({
     embeddingEnabled: process.env.AI_EMBEDDING_ENABLED === 'true',
     defaultProvider:
         process.env.AI_DEFAULT_PROVIDER || DEFAULT_DEFAULT_AI_PROVIDER,
-    defaultEmbeddingModelProvider: process.env.AI_DEFAULT_EMBEDDING_PROVIDER,
+    defaultEmbeddingModelProvider:
+        process.env.AI_DEFAULT_EMBEDDING_PROVIDER ||
+        DEFAULT_DEFAULT_AI_PROVIDER,
     providers: {
         azure: process.env.AZURE_AI_API_KEY
             ? {
@@ -687,6 +689,13 @@ export const getAiConfig = () => ({
                   apiKey: process.env.AZURE_AI_API_KEY,
                   apiVersion: process.env.AZURE_AI_API_VERSION,
                   deploymentName: process.env.AZURE_AI_DEPLOYMENT_NAME,
+                  deploymentSupportsReasoning:
+                      process.env.AZURE_AI_DEPLOYMENT_SUPPORTS_REASONING ===
+                      'true',
+                  embeddingDeploymentName:
+                      process.env.AZURE_EMBEDDING_DEPLOYMENT_NAME,
+                  useDeploymentBasedUrls:
+                      process.env.AZURE_USE_DEPLOYMENT_BASED_URLS !== 'false',
               }
             : undefined,
         openai: process.env.OPENAI_API_KEY
@@ -974,6 +983,9 @@ export type LightdashConfig = {
     echarts6: {
         enabled: boolean;
     };
+    editYamlInUi: {
+        enabled: boolean;
+    };
 };
 
 export type SlackConfig = {
@@ -993,6 +1005,8 @@ export type HeadlessBrowserConfig = {
     port?: string;
     internalLightdashHost: string;
     browserEndpoint: string;
+    maxScreenshotRetries: number;
+    retryBaseDelayMs: number;
 };
 export type S3Config = {
     region: string;
@@ -1453,10 +1467,7 @@ export const parseConfig = (): LightdashConfig => {
             },
         },
         intercom: {
-            appId:
-                process.env.INTERCOM_APP_ID === undefined
-                    ? 'zppxyjpp'
-                    : process.env.INTERCOM_APP_ID,
+            appId: process.env.INTERCOM_APP_ID || '',
             apiBase:
                 process.env.INTERCOM_APP_BASE || 'https://api-iam.intercom.io',
         },
@@ -1533,6 +1544,14 @@ export const parseConfig = (): LightdashConfig => {
             internalLightdashHost:
                 process.env.INTERNAL_LIGHTDASH_HOST || siteUrl,
             browserEndpoint,
+            maxScreenshotRetries: parseInt(
+                process.env.HEADLESS_BROWSER_MAX_SCREENSHOT_RETRIES || '5',
+                10,
+            ),
+            retryBaseDelayMs: parseInt(
+                process.env.HEADLESS_BROWSER_RETRY_BASE_DELAY_MS || '3000',
+                10,
+            ),
         },
         s3: parseBaseS3Config(),
         results: {
@@ -1727,6 +1746,9 @@ export const parseConfig = (): LightdashConfig => {
         },
         echarts6: {
             enabled: process.env.ECHARTS_V6_ENABLED === 'true',
+        },
+        editYamlInUi: {
+            enabled: process.env.EDIT_YAML_IN_UI_ENABLED === 'true',
         },
     };
 };

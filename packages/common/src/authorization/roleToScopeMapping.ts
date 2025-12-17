@@ -73,10 +73,12 @@ const BASE_ROLE_SCOPES = {
         'manage:SqlRunner',
         'manage:Validation',
         'manage:CompileProject',
-        'create:Project', // Preview projects
+        'create:Project@preview', // Preview projects
         'delete:Project@self', // Preview projects created by user
         'update:Project',
         'view:JobStatus', // All jobs in project
+        'view:SourceCode',
+        'manage:SourceCode',
 
         // Enterprise scopes
         'manage:SpotlightTableConfig',

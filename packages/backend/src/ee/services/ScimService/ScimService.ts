@@ -49,6 +49,7 @@ import { ProjectModel } from '../../../models/ProjectModel/ProjectModel';
 import { RolesModel } from '../../../models/RolesModel';
 import { UserModel } from '../../../models/UserModel';
 import { BaseService } from '../../../services/BaseService';
+import { wrapSentryTransaction } from '../../../utils';
 import { CommercialFeatureFlagModel } from '../../models/CommercialFeatureFlagModel';
 import { ServiceAccountModel } from '../../models/ServiceAccountModel';
 
@@ -64,6 +65,8 @@ type ScimServiceArguments = {
     rolesModel: RolesModel;
     projectModel: ProjectModel;
 };
+
+const NO_ROLE_KEYWORD = 'no-role';
 
 export class ScimService extends BaseService {
     private readonly lightdashConfig: LightdashConfig;
@@ -750,7 +753,14 @@ export class ScimService extends BaseService {
                     role.value,
                 );
                 if (projectUuid) {
-                    desiredProjectRoles.push({ projectUuid, roleId: roleUuid });
+                    if (roleUuid.toLowerCase() === NO_ROLE_KEYWORD) {
+                        // Ignore entry in SCIM roles array. This is used to bypass limitation in Okta SCIM API where a role value can't be optionally set.
+                    } else {
+                        desiredProjectRoles.push({
+                            projectUuid,
+                            roleId: roleUuid,
+                        });
+                    }
                 } else if (isOrganizationMemberRole(roleUuid)) {
                     desiredOrgRoleUuid = roleUuid;
                 }
@@ -1542,7 +1552,11 @@ export class ScimService extends BaseService {
         // Check for invalid role values
         const invalidRoles = roles
             .map((role) => role.value)
-            .filter((roleValue) => !validRoleValues.includes(roleValue));
+            .filter(
+                (roleValue) =>
+                    !validRoleValues.includes(roleValue) &&
+                    !roleValue.toLowerCase().endsWith(NO_ROLE_KEYWORD),
+            );
 
         if (invalidRoles.length > 0) {
             throw new ParameterError(
@@ -1628,8 +1642,11 @@ export class ScimService extends BaseService {
         );
 
         // Get all projects for the organization, ignoring preview projects
-        const allProjects = await this.projectModel.getAllByOrganizationUuid(
-            organizationUuid,
+        const allProjects = await wrapSentryTransaction(
+            'ScimService.getAllRoles.getAllByOrganizationUuid',
+            { organizationUuid },
+            async () =>
+                this.projectModel.getAllByOrganizationUuid(organizationUuid),
         );
         const nonPreviewProjects = allProjects.filter(
             (project) => project.type !== ProjectType.PREVIEW,

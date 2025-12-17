@@ -800,7 +800,11 @@ const getPivotSeries = ({
             label: {
                 ...series.label,
                 ...(series.color &&
-                    getValueLabelStyle(series.label.position, series.type)),
+                    getValueLabelStyle(
+                        series.label.position,
+                        series.type,
+                        series.color,
+                    )),
                 ...(itemsMap &&
                     itemsMap[series.encode.yRef.field] && {
                         formatter: (param: any) => {
@@ -912,28 +916,22 @@ const getSimpleSeries = ({
         label: {
             ...series.label,
             // Apply value label styling for all series types
-            ...getValueLabelStyle(series.label.position, series.type),
+            ...getValueLabelStyle(
+                series.label.position,
+                series.type,
+                series.color,
+            ),
             ...(itemsMap &&
                 itemsMap[yFieldHash] && {
-                    formatter: (value: any) => {
+                    formatter: (param: any) => {
                         const field = itemsMap[yFieldHash];
-                        const v = value?.value;
-                        let rawValue: any;
 
-                        // Handle tuple mode (array) vs dataset mode (object)
-                        if (Array.isArray(v)) {
-                            // Use encode.y to get the right index
-                            const yIdx = Array.isArray(value?.encode?.y)
-                                ? value.encode.y[0]
-                                : value?.encode?.y;
-                            rawValue =
-                                typeof yIdx === 'number' ? v[yIdx] : v[1];
-                        } else if (v && typeof v === 'object') {
-                            // Dataset mode: use yFieldHash as key
-                            rawValue = v[yFieldHash];
-                        } else {
-                            rawValue = v;
-                        }
+                        const rawValue = getMetricFromParam(
+                            param,
+                            series,
+                            yFieldHash,
+                            !!flipAxes,
+                        );
 
                         // For 100% stacked charts on the primary axis, values are already percentages (0-100)
                         // Only apply stack100 formatting if this series is on yAxisIndex 0
@@ -1631,6 +1629,7 @@ const getEchartAxes = ({
                     validCartesianConfig.layout.flipAxes &&
                     showXAxis && {
                         axisLabel: {
+                            ...(bottomAxisConfigWithStyle.axisLabel || {}),
                             formatter: '{value}%',
                         },
                     }),
@@ -1735,6 +1734,7 @@ const getEchartAxes = ({
                     !validCartesianConfig.layout.flipAxes &&
                     showYAxis && {
                         axisLabel: {
+                            ...(leftAxisConfigWithStyle.axisLabel || {}),
                             formatter: '{value}%',
                         },
                     }),
@@ -2132,6 +2132,7 @@ const useEchartsCartesianConfig = (
                             ...getValueLabelStyle(
                                 serie.label.position,
                                 serie.type,
+                                computedColor,
                             ),
                         },
                     }),

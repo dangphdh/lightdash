@@ -71,9 +71,14 @@ export enum FeatureFlags {
     PeriodOverPeriod = 'pop',
 
     /**
-     * Dark mode
+     * Enable viewing and editing YAML source files in the Explore UI
      */
-    DarkMode = 'dark-mode',
+    EditYamlInUi = 'edit-yaml-in-ui',
+
+    /**
+     * Dashboard redesign
+     */
+    DashboardRedesign = 'dashboard-redesign',
 }
 
 export type FeatureFlag = {

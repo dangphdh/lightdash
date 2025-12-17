@@ -7,15 +7,16 @@ import { IconUnlink } from '@tabler/icons-react';
 import { useEffect, useMemo, type FC } from 'react';
 import { Responsive, WidthProvider, type Layout } from 'react-grid-layout';
 import { useLocation, useNavigate } from 'react-router';
-import {
-    getReactGridLayoutConfig,
-    getResponsiveGridLayoutProps,
-    type ResponsiveGridLayoutProps,
-} from '../../../../../components/DashboardTabs/gridUtils';
+import HeadingTile from '../../../../../components/DashboardTiles/DashboardHeadingTile';
 import LoomTile from '../../../../../components/DashboardTiles/DashboardLoomTile';
 import SqlChartTile from '../../../../../components/DashboardTiles/DashboardSqlChartTile';
 import SuboptimalState from '../../../../../components/common/SuboptimalState/SuboptimalState';
 import { LockedDashboardModal } from '../../../../../components/common/modal/LockedDashboardModal';
+import {
+    getReactGridLayoutConfig,
+    getResponsiveGridLayoutProps,
+    type ResponsiveGridLayoutProps,
+} from '../../../../../features/dashboardTabs/gridUtils';
 import useDashboardContext from '../../../../../providers/Dashboard/useDashboardContext';
 import useEmbed from '../../../../providers/Embed/useEmbed';
 import { useEmbedDashboard } from '../hooks';
@@ -103,6 +104,14 @@ const EmbedDashboardGrid: FC<{
                             />
                         ) : tile.type === DashboardTileTypes.SQL_CHART ? (
                             <SqlChartTile
+                                key={tile.uuid}
+                                tile={tile}
+                                isEditMode={false}
+                                onDelete={() => {}}
+                                onEdit={() => {}}
+                            />
+                        ) : tile.type === DashboardTileTypes.HEADING ? (
+                            <HeadingTile
                                 key={tile.uuid}
                                 tile={tile}
                                 isEditMode={false}

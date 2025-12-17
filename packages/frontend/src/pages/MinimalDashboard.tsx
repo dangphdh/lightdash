@@ -15,15 +15,16 @@ import { useCallback, useEffect, useMemo, useState, type FC } from 'react';
 import { Responsive, WidthProvider, type Layout } from 'react-grid-layout';
 import { useParams } from 'react-router';
 import SuboptimalState from '../components/common/SuboptimalState/SuboptimalState';
-import {
-    getReactGridLayoutConfig,
-    getResponsiveGridLayoutProps,
-} from '../components/DashboardTabs/gridUtils';
 import ChartTile from '../components/DashboardTiles/DashboardChartTile';
+import HeadingTile from '../components/DashboardTiles/DashboardHeadingTile';
 import LoomTile from '../components/DashboardTiles/DashboardLoomTile';
 import MarkdownTile from '../components/DashboardTiles/DashboardMarkdownTile';
 import SqlChartTile from '../components/DashboardTiles/DashboardSqlChartTile';
 import MinimalDashboardTabs from '../components/MinimalDashboardTabs';
+import {
+    getReactGridLayoutConfig,
+    getResponsiveGridLayoutProps,
+} from '../features/dashboardTabs/gridUtils';
 import { useScheduler } from '../features/scheduler/hooks/useScheduler';
 import { useDashboardQuery } from '../hooks/dashboard/useDashboard';
 import { useDateZoomGranularitySearch } from '../hooks/useExplorerRoute';
@@ -250,6 +251,14 @@ const MinimalDashboard: FC = () => {
                                 />
                             ) : tile.type === DashboardTileTypes.SQL_CHART ? (
                                 <SqlChartTile
+                                    key={tile.uuid}
+                                    tile={tile}
+                                    isEditMode={false}
+                                    onDelete={() => {}}
+                                    onEdit={() => {}}
+                                />
+                            ) : tile.type === DashboardTileTypes.HEADING ? (
+                                <HeadingTile
                                     key={tile.uuid}
                                     tile={tile}
                                     isEditMode={false}

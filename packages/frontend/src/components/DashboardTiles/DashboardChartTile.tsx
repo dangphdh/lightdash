@@ -83,6 +83,7 @@ type ClientSideError = {
 type DashboardTileError = ApiError | ClientSideError;
 
 import { DashboardTileComments } from '../../features/comments';
+import { FilterDashboardTo } from '../../features/dashboardFilters/FilterDashboardTo';
 import { DateZoomInfoOnTile } from '../../features/dateZoom';
 import { ExportToGoogleSheet } from '../../features/export';
 import {
@@ -115,7 +116,6 @@ import useApp from '../../providers/App/useApp';
 import useDashboardContext from '../../providers/Dashboard/useDashboardContext';
 import useTracking from '../../providers/Tracking/useTracking';
 import { EventName } from '../../types/Events';
-import { FilterDashboardTo } from '../DashboardFilter/FilterDashboardTo';
 import LightdashVisualization from '../LightdashVisualization';
 import VisualizationProvider from '../LightdashVisualization/VisualizationProvider';
 import DrillDownMenuItem from '../MetricQueryData/DrillDownMenuItem';
@@ -243,6 +243,9 @@ const ValidDashboardChartTile: FC<{
 
     const dashboardFilters = useDashboardFiltersForTile(tileUuid);
     const invalidateCache = useDashboardContext((c) => c.invalidateCache);
+    const dateZoomGranularity = useDashboardContext(
+        (c) => c.dateZoomGranularity,
+    );
 
     const { health } = useApp();
     const { data: org } = useOrganization();
@@ -329,6 +332,7 @@ const ValidDashboardChartTile: FC<{
             containerWidth={containerWidth}
             containerHeight={containerHeight}
             isDashboard
+            dateZoom={{ granularity: dateZoomGranularity }}
         >
             <LightdashVisualization
                 ref={measureRef}
@@ -366,6 +370,9 @@ const ValidDashboardChartTileMinimal: FC<{
     const { colorScheme } = useMantineColorScheme();
 
     const dashboardFilters = useDashboardFiltersForTile(tileUuid);
+    const dateZoomGranularity = useDashboardContext(
+        (c) => c.dateZoomGranularity,
+    );
 
     const {
         ref: measureRef,
@@ -444,6 +451,7 @@ const ValidDashboardChartTileMinimal: FC<{
             containerWidth={containerWidth}
             containerHeight={containerHeight}
             isDashboard
+            dateZoom={{ granularity: dateZoomGranularity }}
         >
             <LightdashVisualization
                 ref={measureRef}
@@ -772,12 +780,23 @@ const DashboardChartTileMain: FC<DashboardChartTileMainProps> = (props) => {
                 e.dimensionNames.includes(getItemId(dimension)),
             );
 
+            // Helper to extract value from click event data
+            // For stacked bars: e.value is an array, e.dimensionNames maps indices to field names
+            // For other charts: e.data is an object with field names as keys
+            const getValueFromClickData = (fieldId: string) => {
+                if (Array.isArray(e.value) && e.dimensionNames) {
+                    const index = e.dimensionNames.indexOf(fieldId);
+                    return index >= 0 ? e.value[index] : undefined;
+                }
+                return (e.data as Record<string, unknown>)[fieldId];
+            };
+
             const dimensionOptions = dimensions.map((dimension) =>
                 createDashboardFilterRuleFromField({
                     field: dimension,
                     availableTileFilters: {},
                     isTemporary: true,
-                    value: e.data[getItemId(dimension)],
+                    value: getValueFromClickData(getItemId(dimension)),
                 }),
             );
             const serie = series[e.seriesIndex];

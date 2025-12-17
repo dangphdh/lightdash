@@ -229,18 +229,16 @@ const scopes: Scope[] = [
         getConditions: addDefaultUuidCondition,
     },
     {
-        name: 'create:Project',
-        description: 'Create new projects',
+        name: 'create:Project@preview',
+        description: 'Create new preview projects',
         isEnterprise: false,
         group: ScopeGroup.PROJECT_MANAGEMENT,
-        getConditions: (context) =>
-            // Allow creating preview projects by default
-            [
-                {
-                    upstreamProjectUuid: context.projectUuid,
-                    type: ProjectType.PREVIEW,
-                },
-            ],
+        getConditions: (context) => [
+            {
+                upstreamProjectUuid: context.projectUuid,
+                type: ProjectType.PREVIEW,
+            },
+        ],
     },
     {
         name: 'update:Project',
@@ -513,6 +511,20 @@ const scopes: Scope[] = [
     {
         name: 'manage:ChangeCsvResults',
         description: 'Modify CSV export results',
+        isEnterprise: false,
+        group: ScopeGroup.DATA,
+        getConditions: addDefaultUuidCondition,
+    },
+    {
+        name: 'view:SourceCode',
+        description: 'View source code for explores and models',
+        isEnterprise: false,
+        group: ScopeGroup.DATA,
+        getConditions: addDefaultUuidCondition,
+    },
+    {
+        name: 'manage:SourceCode',
+        description: 'Create pull requests to update source code',
         isEnterprise: false,
         group: ScopeGroup.DATA,
         getConditions: addDefaultUuidCondition,

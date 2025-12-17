@@ -6,11 +6,13 @@ import type {
     DashboardChartTileProperties,
     DashboardFilterRule,
     DashboardFilters,
+    DashboardHeadingTileProperties,
     DashboardLoomTileProperties,
     DashboardMarkdownTileProperties,
     DashboardTile,
     PromotionChanges,
     SavedChart,
+    SqlChart,
 } from '..';
 
 export const currentVersion = 1;
@@ -33,6 +35,18 @@ export type ChartAsCode = Pick<
     version: number;
     spaceSlug: string; // Charts within dashboards will be pointing to spaceSlug of the dashboard by design
     downloadedAt?: Date; // Not modifiable by user, but useful to know if it has been updated
+};
+
+// SQL Charts are stored separately from regular saved charts
+// They have SQL queries instead of metricQuery/tableName
+export type SqlChartAsCode = Pick<
+    SqlChart,
+    'name' | 'description' | 'slug' | 'sql' | 'limit' | 'config' | 'chartKind'
+> & {
+    version: number;
+    spaceSlug: string;
+    updatedAt: Date;
+    downloadedAt?: Date;
 };
 
 export type ApiChartAsCodeListResponse = {
@@ -59,6 +73,21 @@ export type ApiChartAsCodeUpsertResponse = {
     results: PromotionChanges;
 };
 
+export type ApiSqlChartAsCodeUpsertResponse = {
+    status: 'ok';
+    results: PromotionChanges;
+};
+
+export type ApiSqlChartAsCodeListResponse = {
+    status: 'ok';
+    results: {
+        sqlCharts: SqlChartAsCode[];
+        missingIds: string[];
+        total: number;
+        offset: number;
+    };
+};
+
 export type DashboardTileAsCode = Omit<DashboardTile, 'properties' | 'uuid'> & {
     uuid: DashboardTile['uuid'] | undefined; // Allows us to remove the uuid from the object
     tileSlug: string | undefined;
@@ -68,7 +97,8 @@ export type DashboardTileAsCode = Omit<DashboardTile, 'properties' | 'uuid'> & {
               'title' | 'hideTitle' | 'chartSlug' | 'chartName'
           >
         | DashboardMarkdownTileProperties['properties']
-        | DashboardLoomTileProperties['properties'];
+        | DashboardLoomTileProperties['properties']
+        | DashboardHeadingTileProperties['properties'];
 };
 
 export type DashboardTileWithSlug = DashboardTile & {
